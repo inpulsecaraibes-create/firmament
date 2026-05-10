@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ArrowRight, ArrowLeft, Check, Send, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Send, Eye, EyeOff, Mic, MicOff } from "lucide-react";
 import { getCosmicLine } from "./lib/cosmic";
 import { createClient } from "./lib/supabase/client";
 import SmartTodo, { TodoTask } from "./components/SmartTodo";
@@ -23,6 +23,12 @@ interface ChatMessage {
 
 const cosmicLine = getCosmicLine();
 
+const ETINCELLES = [
+  "Je ne sais plus par où commencer…",
+  "J'ai un doute sur mon business model",
+  "Mon équipe m'épuise en ce moment",
+];
+
 export default function Firmament() {
   const [screen, setScreen] = useState<Screen>("braindump");
   const [brainDump, setBrainDump] = useState("");
@@ -34,7 +40,9 @@ export default function Firmament() {
   const [error, setError] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
   const [loginMode, setLoginMode] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   // Inscription
   const [regEmail, setRegEmail] = useState("");
@@ -44,14 +52,49 @@ export default function Firmament() {
   const [regError, setRegError] = useState("");
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
   const supabase = createClient();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsLoggedIn(!!user);
+      if (user) {
+        setIsLoggedIn(true);
+        // Récupérer le prénom depuis les métadonnées ou l'email
+        const name = user.user_metadata?.prenom || user.email?.split("@")[0] || "";
+        setUserName(name);
+      }
     });
+  }, []);
+
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
+
+  function startVoice() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "fr-FR";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = (event: { results: { [key: number]: { [key: number]: { transcript: string } } } }) => {
+      const transcript = Array.from(Object.values(event.results))
+        .map((r) => (r as { [key: number]: { transcript: string } })[0].transcript)
+        .join("");
+      setBrainDump(transcript);
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
+    recognitionRef.current = recognition;
+    setIsListening(true);
+  }
+
+  function stopVoice() {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }
 
   async function saveConversation(dump: string, msgs: ChatMessage[]) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -216,16 +259,14 @@ export default function Firmament() {
         style={{ backgroundColor: "var(--fond)", minHeight: "100dvh", position: "relative" }}
         className="flex flex-col items-center justify-center px-6 py-12"
       >
-        {/* Lien connexion discret pour utilisateurs existants */}
-        {!isLoggedIn && (
-          <a
-            href="/auth/login"
-            style={{
-              position: "absolute", top: "16px", right: "16px",
-              color: "var(--texte-discret)", fontSize: "12px",
-              fontFamily: "DM Sans, sans-serif", textDecoration: "none",
-            }}
-          >
+        {/* Lien connexion / déconnexion discret */}
+        {isLoggedIn ? (
+          <button onClick={async () => { await supabase.auth.signOut(); setIsLoggedIn(false); setUserName(""); }}
+            style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", color: "var(--texte-discret)", fontSize: "12px", fontFamily: "DM Sans, sans-serif", cursor: "pointer" }}>
+            Se déconnecter
+          </button>
+        ) : (
+          <a href="/auth/login" style={{ position: "absolute", top: "16px", right: "16px", color: "var(--texte-discret)", fontSize: "12px", fontFamily: "DM Sans, sans-serif", textDecoration: "none" }}>
             Déjà un espace ?
           </a>
         )}
@@ -240,6 +281,12 @@ export default function Firmament() {
         </div>
 
         <div className="w-full max-w-lg text-center mb-8">
+          {/* Reconnaissance utilisateur connecté */}
+          {isLoggedIn && userName && (
+            <p style={{ color: "var(--or)", fontSize: "13px", fontStyle: "italic", marginBottom: "10px", fontFamily: "Cormorant Garamond, serif" }}>
+              Content de te revoir, {userName}.
+            </p>
+          )}
           <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--texte)", fontSize: "28px", fontWeight: 300, lineHeight: "1.3" }}>
             {`Qu'est-ce qui occupe tout l'espace`}
             <br />
@@ -276,6 +323,35 @@ export default function Firmament() {
             onFocus={(e) => { e.target.style.borderBottomColor = "var(--bordeaux)"; }}
             onBlur={(e) => { e.target.style.borderBottomColor = "var(--texte-discret)"; }}
           />
+          {/* Étincelles */}
+          {brainDump.trim().length === 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "12px" }}>
+              {ETINCELLES.map((e) => (
+                <button key={e} onClick={() => setBrainDump(e)}
+                  style={{ background: "none", border: "1px solid rgba(92,26,46,0.15)", borderRadius: "20px", padding: "8px 14px", fontSize: "13px", fontFamily: "DM Sans, sans-serif", color: "var(--texte-tertiary)", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
+                  onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.borderColor = "var(--bordeaux)"; (e.target as HTMLButtonElement).style.color = "var(--bordeaux)"; }}
+                  onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.borderColor = "rgba(92,26,46,0.15)"; (e.target as HTMLButtonElement).style.color = "var(--texte-tertiary)"; }}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Mention RGPD discrète */}
+          <p style={{ color: "var(--texte-discret)", fontSize: "11px", fontStyle: "italic", marginTop: "10px", lineHeight: "1.5" }}>
+            Tes pensées sont chiffrées et ne quittent pas FIRMAMENT. Téfi est un confident muet.
+          </p>
+
+          {/* Bouton dictée vocale */}
+          <button
+            onClick={isListening ? stopVoice : startVoice}
+            style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", cursor: "pointer", color: isListening ? "var(--bordeaux)" : "var(--texte-discret)", fontSize: "12px", fontFamily: "DM Sans, sans-serif", padding: "8px 0", marginTop: "4px" }}
+          >
+            {isListening ? <MicOff size={14} /> : <Mic size={14} />}
+            {isListening ? "Arrêter la dictée" : "Dicter à Téfi"}
+          </button>
+
           <button
             onClick={handleClarify}
             disabled={brainDump.trim().length < 10 || screen === "loading"}
