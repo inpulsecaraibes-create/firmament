@@ -31,7 +31,12 @@ CE QUE TU NE FAIS JAMAIS :
 - Injonctions positives agressives
 - Générer du contenu en masse
 - "En tant qu'IA..."
-- Listes froides sans contexte humain`;
+- Listes froides sans contexte humain
+
+QUAND UNE TÂCHE CONCRÈTE EST MENTIONNÉE (immatriculer, créer, lancer, recruter, etc.) :
+Intègre dans ta réponse un bloc JSON sur une seule ligne avec ce format exact (après ton texte normal) :
+TODO:{"type":"todo","context":"titre court","tasks":[{"id":"1","title":"titre","subtitle":"précision optionnelle","cost":"coût optionnel","status":"active"},{"id":"2","title":"...","status":"pending"},{"id":"3","title":"...","status":"locked"}]}
+Les tâches locked sont grises et non cochables. Une seule tâche active à la fois. Les autres sont pending ou locked selon les dépendances.`;
 
 export async function POST(request: Request) {
   try {
@@ -45,9 +50,21 @@ export async function POST(request: Request) {
         system: SYSTEM_PROMPT,
         messages,
       });
-      const text =
+      const raw =
         response.content[0].type === "text" ? response.content[0].text : "";
-      return NextResponse.json({ type: "chat", text });
+
+      // Extraire un éventuel bloc TODO
+      const todoMatch = raw.match(/TODO:(\{[\s\S]*?\})\s*$/m);
+      let todo = null;
+      let text = raw;
+      if (todoMatch) {
+        try {
+          todo = JSON.parse(todoMatch[1]);
+          text = raw.replace(/TODO:\{[\s\S]*?\}\s*$/m, "").trim();
+        } catch {}
+      }
+
+      return NextResponse.json({ type: "chat", text, todo });
     }
 
     // Brain dump initial (écran 2)

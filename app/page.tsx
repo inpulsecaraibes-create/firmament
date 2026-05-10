@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { ArrowRight, ArrowLeft, Check, Send, LogOut } from "lucide-react";
 import { getCosmicLine } from "./lib/cosmic";
 import { createClient } from "./lib/supabase/client";
+import SmartTodo, { TodoTask } from "./components/SmartTodo";
 
 type Screen = "braindump" | "loading" | "response" | "chat";
 
@@ -17,6 +18,7 @@ interface TefiResponse {
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  todo?: { context: string; tasks: TodoTask[] } | null;
 }
 
 const cosmicLine = getCosmicLine();
@@ -114,7 +116,11 @@ export default function Firmament() {
         body: JSON.stringify({ messages: newMessages }),
       });
       const data = await res.json();
-      const assistantMsg: ChatMessage = { role: "assistant", content: data.text };
+      const assistantMsg: ChatMessage = {
+        role: "assistant",
+        content: data.text,
+        todo: data.todo || null,
+      };
       setChatMessages([...newMessages, assistantMsg]);
       saveMessage("user", chatInput);
       saveMessage("assistant", data.text);
@@ -428,6 +434,9 @@ export default function Firmament() {
               }}>
                 {msg.content}
               </div>
+              {msg.todo && msg.role === "assistant" && (
+                <SmartTodo context={msg.todo.context} tasks={msg.todo.tasks} />
+              )}
             </div>
           ))}
           {chatLoading && (
