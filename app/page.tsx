@@ -7,8 +7,9 @@ import { createClient } from "./lib/supabase/client";
 import SmartTodo, { TodoTask } from "./components/SmartTodo";
 import ActionList from "./components/ActionList";
 import Logo from "./components/Logo";
+import AccueilConnecte from "./components/AccueilConnecte";
 
-type Screen = "braindump" | "loading" | "response" | "register" | "chat";
+type Screen = "home" | "braindump" | "loading" | "response" | "register" | "chat";
 
 interface TefiResponse {
   observation: string;
@@ -63,9 +64,9 @@ export default function Firmament() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setIsLoggedIn(true);
-        // Récupérer le prénom depuis les métadonnées ou l'email
         const name = user.user_metadata?.prenom || user.email?.split("@")[0] || "";
         setUserName(name);
+        setScreen("home"); // Utilisateur connecté → écran d'accueil
       }
     });
   }, []);
@@ -252,6 +253,18 @@ export default function Firmament() {
     transition: "border-color 0.2s",
     marginBottom: "20px",
   };
+
+  // ─── ÉCRAN ACCUEIL CONNECTÉ ──────────────────────────────────────────────
+  if (screen === "home") {
+    return (
+      <AccueilConnecte
+        userName={userName}
+        onDump={() => setScreen("braindump")}
+        onRelais={() => { /* Étape D */ }}
+        onSetObjectif={() => setScreen("braindump")}
+      />
+    );
+  }
 
   // ─── ÉCRAN 1 — BRAIN DUMP ────────────────────────────────────────────────
   if (screen === "braindump" || screen === "loading") {
