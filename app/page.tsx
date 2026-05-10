@@ -6,6 +6,7 @@ import { getCosmicLine } from "./lib/cosmic";
 import { createClient } from "./lib/supabase/client";
 import SmartTodo, { TodoTask } from "./components/SmartTodo";
 import ActionList from "./components/ActionList";
+import Logo from "./components/Logo";
 
 type Screen = "braindump" | "loading" | "response" | "register" | "chat";
 
@@ -41,6 +42,7 @@ export default function Firmament() {
   const [error, setError] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [userName, setUserName] = useState("");
   const [loginMode, setLoginMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -175,11 +177,9 @@ export default function Firmament() {
     }
 
     if (data.user) {
-      setIsLoggedIn(true);
-      // Sauvegarder la conversation de l'utilisateur nouvellement inscrit
-      const msgs: ChatMessage[] = chatMessages;
-      await saveConversation(brainDump, msgs);
-      setScreen("chat");
+      // Email confirmation requise — montrer l'écran d'attente
+      // La conversation sera sauvegardée après confirmation
+      setNeedsConfirmation(true);
     }
     setRegLoading(false);
   }
@@ -272,17 +272,19 @@ export default function Firmament() {
           </a>
         )}
 
-        <div className="mb-12 text-center">
+        <div className="mb-10 text-center">
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
+            <Logo size={72} variant="bordeaux" />
+          </div>
           <p style={{ color: "var(--texte-discret)", fontSize: "11px", letterSpacing: "0.2em" }} className="uppercase">
             Duleme & Cie
           </p>
-          <h1 style={{ color: "var(--bordeaux)", fontFamily: "Cormorant Garamond, serif", fontSize: "42px", fontWeight: 300, letterSpacing: "0.12em" }}>
+          <h1 style={{ color: "var(--bordeaux)", fontFamily: "Cormorant Garamond, serif", fontSize: "38px", fontWeight: 300, letterSpacing: "0.12em" }}>
             FIRMAMENT
           </h1>
         </div>
 
         <div className="w-full max-w-lg text-center mb-8">
-          {/* Reconnaissance utilisateur connecté */}
           {isLoggedIn && userName && (
             <p style={{ color: "var(--or)", fontSize: "13px", fontStyle: "italic", marginBottom: "10px", fontFamily: "Cormorant Garamond, serif" }}>
               Content de te revoir, {userName}.
@@ -464,6 +466,44 @@ export default function Firmament() {
 
   // ─── ÉCRAN INSCRIPTION ───────────────────────────────────────────────────
   if (screen === "register") {
+
+    // Écran confirmation email
+    if (needsConfirmation) {
+      return (
+        <main style={{ backgroundColor: "var(--fond)", minHeight: "100dvh" }} className="flex flex-col items-center justify-center px-6 py-12">
+          <div style={{ textAlign: "center", maxWidth: "360px" }}>
+            <div style={{ width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "var(--bordeaux-light)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+              <span style={{ fontSize: "28px" }}>✉️</span>
+            </div>
+            <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--texte)", fontSize: "26px", fontWeight: 300, marginBottom: "14px", lineHeight: "1.3" }}>
+              Confirme ton adresse email
+            </h2>
+            <p style={{ color: "var(--texte-secondary)", fontSize: "15px", lineHeight: "1.65", marginBottom: "8px" }}>
+              Un email a été envoyé à
+            </p>
+            <p style={{ color: "var(--bordeaux)", fontSize: "15px", fontWeight: 500, marginBottom: "20px" }}>
+              {regEmail}
+            </p>
+            <p style={{ color: "var(--texte-discret)", fontSize: "14px", lineHeight: "1.6", marginBottom: "28px" }}>
+              Clique sur le lien dans cet email pour activer ton espace FIRMAMENT. Le lien est valable 24 heures.
+            </p>
+            <div style={{ backgroundColor: "var(--fond-or)", borderRadius: "12px", padding: "16px 18px", marginBottom: "28px" }}>
+              <p style={{ color: "var(--texte-secondary)", fontSize: "13px", lineHeight: "1.6", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif" }}>
+                {`Ta clarté du jour est préservée. Tu la retrouveras dès que tu auras confirmé ton email.`}
+              </p>
+            </div>
+            <p style={{ color: "var(--texte-discret)", fontSize: "12px" }}>
+              Pas reçu ? Vérifie tes spams.
+            </p>
+            <button onClick={() => { setNeedsConfirmation(false); setScreen("response"); }}
+              style={{ marginTop: "20px", background: "none", border: "none", color: "var(--texte-discret)", fontSize: "13px", cursor: "pointer", textDecoration: "underline", fontFamily: "DM Sans, sans-serif" }}>
+              ← Retour à ma clarté en attendant
+            </button>
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main style={{ backgroundColor: "var(--fond)", minHeight: "100dvh" }} className="flex flex-col items-center justify-center px-6 py-12">
         <div className="mb-10 text-center">
