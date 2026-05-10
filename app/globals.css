@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bordeaux: #5C1A2E;
+  --bordeaux-secondary: #7A2440;
+  --bordeaux-light: rgba(92,26,46,0.07);
+  --fond: #F8F5F0;
+  --fond-blanc: #FDFBF8;
+  --fond-or: #F0E8D8;
+  --or: #8C6D3F;
+  --or-accent: #C4A46B;
+  --texte: #1A1210;
+  --texte-secondary: #3D2E28;
+  --texte-tertiary: #7A6A60;
+  --texte-discret: #B0A098;
+  --vert: #1B3A2D;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--fond);
+  color: var(--texte);
+  font-family: "DM Sans", sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar discrète */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--texte-discret); border-radius: 2px; }
+
+/* Input focus discret */
+textarea:focus, input:focus {
+  outline: none;
+}

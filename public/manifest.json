@@ -1,0 +1,22 @@
+{
+  "name": "FIRMAMENT — Duleme & Cie",
+  "short_name": "FIRMAMENT",
+  "description": "Tu me dis ce que tu as dans la tête. FIRMAMENT t'aide à savoir quoi faire.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F5F0",
+  "theme_color": "#5C1A2E",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
