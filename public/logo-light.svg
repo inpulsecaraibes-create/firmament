@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72" fill="none">
+  <!-- Dôme retourné — État A : fond clair, bordeaux fin -->
+  <g transform="translate(60,38) rotate(180) translate(-60,-38)">
+    <!-- Arc extérieur gauche -->
+    <path d="M8,68 C8,68 12,52 18,44 C24,36 30,34 38,30 C44,27 48,22 50,16 C51,12 51,8 52,4" stroke="#5C1A2E" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <!-- Arc extérieur droit (miroir) -->
+    <path d="M112,68 C112,68 108,52 102,44 C96,36 90,34 82,30 C76,27 72,22 70,16 C69,12 69,8 68,4" stroke="#5C1A2E" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <!-- Base -->
+    <path d="M8,68 Q60,72 112,68" stroke="#5C1A2E" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <!-- Détails organiques internes gauche -->
+    <path d="M22,60 C26,54 28,48 30,42 C32,36 36,32 40,28" stroke="#5C1A2E" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+    <path d="M30,64 C34,58 36,52 40,46 C44,40 46,36 48,30" stroke="#5C1A2E" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.5"/>
+    <!-- Détails organiques internes droit -->
+    <path d="M98,60 C94,54 92,48 90,42 C88,36 84,32 80,28" stroke="#5C1A2E" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+    <path d="M90,64 C86,58 84,52 80,46 C76,40 74,36 72,30" stroke="#5C1A2E" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.5"/>
+    <!-- Centre -->
+    <path d="M60,4 C60,12 60,20 60,28" stroke="#5C1A2E" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.4"/>
+  </g>
+</svg>

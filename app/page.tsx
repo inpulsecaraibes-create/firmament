@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ArrowRight, ArrowLeft, Check, Send, Eye, EyeOff, Mic, MicOff } from "lucide-react";
+import { ArrowRight, ArrowLeft, Send, Eye, EyeOff, Mic, MicOff } from "lucide-react";
 import { getCosmicLine } from "./lib/cosmic";
 import { createClient } from "./lib/supabase/client";
 import SmartTodo, { TodoTask } from "./components/SmartTodo";
+import ActionList from "./components/ActionList";
 
 type Screen = "braindump" | "loading" | "response" | "register" | "chat";
 
@@ -33,7 +34,7 @@ export default function Firmament() {
   const [screen, setScreen] = useState<Screen>("braindump");
   const [brainDump, setBrainDump] = useState("");
   const [tefiResponse, setTefiResponse] = useState<TefiResponse | null>(null);
-  const [checkedActions, setCheckedActions] = useState<boolean[]>([false, false, false]);
+  const [, setCheckedActions] = useState<boolean[]>([false, false, false]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -406,21 +407,11 @@ export default function Firmament() {
           </p>
         </div>
 
-        <div style={{ marginBottom: "28px" }}>
-          <p style={{ color: "var(--texte-discret)", fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "14px", fontFamily: "DM Sans, sans-serif" }}>
-            3 actions
+        <div style={{ marginBottom: "28px", backgroundColor: "var(--fond-blanc)", borderRadius: "12px", padding: "16px 18px" }}>
+          <p style={{ color: "var(--texte-discret)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "12px", fontFamily: "DM Sans, sans-serif" }}>
+            Actions prioritaires
           </p>
-          {tefiResponse.actions.map((action, i) => (
-            <button key={i} onClick={() => { const next = [...checkedActions]; next[i] = !next[i]; setCheckedActions(next); }}
-              style={{ display: "flex", alignItems: "flex-start", gap: "12px", width: "100%", background: "none", border: "none", padding: "10px 0", cursor: "pointer", textAlign: "left", borderBottom: i < 2 ? "1px solid rgba(26,18,16,0.08)" : "none" }}>
-              <div style={{ width: "22px", height: "22px", borderRadius: "50%", border: `1.5px solid ${checkedActions[i] ? "var(--vert)" : "var(--texte-discret)"}`, backgroundColor: checkedActions[i] ? "var(--vert)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px", transition: "all 0.15s" }}>
-                {checkedActions[i] && <Check size={12} color="white" strokeWidth={2.5} />}
-              </div>
-              <span style={{ fontSize: "15px", lineHeight: "1.5", fontFamily: "DM Sans, sans-serif", color: checkedActions[i] ? "var(--texte-discret)" : "var(--texte-secondary)", textDecoration: checkedActions[i] ? "line-through" : "none", transition: "all 0.15s" }}>
-                <span style={{ color: "var(--or)", fontWeight: 500, marginRight: "6px" }}>{i + 1}.</span>{action}
-              </span>
-            </button>
-          ))}
+          <ActionList actions={tefiResponse.actions} />
         </div>
 
         <div style={{ backgroundColor: "var(--fond-or)", borderRadius: "12px", padding: "16px 18px", marginBottom: "28px" }}>
