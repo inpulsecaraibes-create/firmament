@@ -25,18 +25,9 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const isAuthRoute = request.nextUrl.pathname.startsWith("/auth");
-  const isApiRoute = request.nextUrl.pathname.startsWith("/api");
-
-  if (!user && !isAuthRoute && !isApiRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
-  }
+  // Refresh session — pas de redirection forcée
+  // L'app gère elle-même l'état connecté / non connecté
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
