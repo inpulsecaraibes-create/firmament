@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ArrowRight, ArrowLeft, Check, Send } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Send, LogOut } from "lucide-react";
 import { getCosmicLine } from "./lib/cosmic";
+import { createClient } from "./lib/supabase/client";
 
 type Screen = "braindump" | "loading" | "response" | "chat";
 
@@ -19,6 +20,7 @@ interface ChatMessage {
 }
 
 const cosmicLine = getCosmicLine();
+const supabase = createClient();
 
 export default function Firmament() {
   const [screen, setScreen] = useState<Screen>("braindump");
@@ -29,7 +31,36 @@ export default function Firmament() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    window.location.href = "/auth/login";
+  }
+
+  async function saveConversation(dump: string, response: TefiResponse, msgs: ChatMessage[]) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: conv } = await supabase
+      .from("conversations")
+      .insert({ user_id: user.id, brain_dump: dump })
+      .select()
+      .single();
+
+    if (!conv) return;
+    setConversationId(conv.id);
+
+    await supabase.from("messages").insert(
+      msgs.map((m) => ({ conversation_id: conv.id, role: m.role, content: m.content }))
+    );
+  }
+
+  async function saveMessage(role: "user" | "assistant", content: string) {
+    if (!conversationId) return;
+    await supabase.from("messages").insert({ conversation_id: conversationId, role, content });
+  }
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,13 +84,15 @@ export default function Firmament() {
       }
       setTefiResponse(data);
       setCheckedActions([false, false, false]);
-      setChatMessages([
+      const msgs: ChatMessage[] = [
         { role: "user", content: brainDump },
         {
           role: "assistant",
           content: `${data.observation}\n\n**${data.priority}**\n\n1. ${data.actions[0]}\n2. ${data.actions[1]}\n3. ${data.actions[2]}\n\n${data.question}`,
         },
-      ]);
+      ];
+      setChatMessages(msgs);
+      saveConversation(brainDump, data, msgs);
       setScreen("response");
     } catch {
       setError(true);
@@ -81,7 +114,10 @@ export default function Firmament() {
         body: JSON.stringify({ messages: newMessages }),
       });
       const data = await res.json();
-      setChatMessages([...newMessages, { role: "assistant", content: data.text }]);
+      const assistantMsg: ChatMessage = { role: "assistant", content: data.text };
+      setChatMessages([...newMessages, assistantMsg]);
+      saveMessage("user", chatInput);
+      saveMessage("assistant", data.text);
     } catch {
       setChatMessages([
         ...newMessages,
@@ -96,9 +132,22 @@ export default function Firmament() {
   if (screen === "braindump" || screen === "loading") {
     return (
       <main
-        style={{ backgroundColor: "var(--fond)", minHeight: "100dvh" }}
+        style={{ backgroundColor: "var(--fond)", minHeight: "100dvh", position: "relative" }}
         className="flex flex-col items-center justify-center px-6 py-12"
       >
+        {/* Bouton déconnexion discret */}
+        <button
+          onClick={handleSignOut}
+          style={{
+            position: "absolute", top: "16px", right: "16px",
+            background: "none", border: "none", cursor: "pointer",
+            color: "var(--texte-discret)", padding: "8px",
+          }}
+          title="Se déconnecter"
+        >
+          <LogOut size={16} />
+        </button>
+
         <div className="mb-12 text-center">
           <p style={{ color: "var(--texte-discret)", fontSize: "11px", letterSpacing: "0.2em" }} className="uppercase">
             Duleme & Cie
