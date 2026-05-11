@@ -9,8 +9,9 @@ import ActionList from "./components/ActionList";
 import Logo from "./components/Logo";
 import AccueilConnecte from "./components/AccueilConnecte";
 import Onboarding from "./components/Onboarding";
+import LandingPage from "./components/LandingPage";
 
-type Screen = "home" | "onboarding" | "braindump" | "loading" | "response" | "register" | "chat";
+type Screen = "landing" | "home" | "onboarding" | "braindump" | "loading" | "response" | "register" | "chat";
 
 interface TefiResponse {
   observation: string;
@@ -216,7 +217,7 @@ export default function Firmament() {
           setScreen("onboarding");
         }
       } else {
-        setScreen("braindump"); // Non connecté → directement le Dump
+        setScreen("landing"); // Non connecté → landing page (belle) → Dump via CTA
       }
     });
   }, []);
@@ -462,6 +463,16 @@ export default function Firmament() {
     transition: "border-color 0.2s",
     marginBottom: "20px",
   };
+
+  // ─── LANDING PAGE ────────────────────────────────────────────────────────
+  if (screen === "landing") {
+    return (
+      <LandingPage
+        onStart={() => setScreen("braindump")}
+        onLogin={() => { setLoginMode(true); setScreen("register"); }}
+      />
+    );
+  }
 
   // ─── ONBOARDING ──────────────────────────────────────────────────────────
   if (screen === "onboarding") {
@@ -869,7 +880,9 @@ export default function Firmament() {
                 <div style={{ maxWidth: "78%", backgroundColor: msg.role === "user" ? "var(--bordeaux)" : "var(--fond-blanc)", color: msg.role === "user" ? "var(--fond-blanc)" : "var(--texte-secondary)", borderRadius: msg.role === "user" ? "16px 0 16px 16px" : "0 16px 16px 16px", padding: "12px 16px", borderLeft: msg.role === "assistant" ? "2px solid rgba(92,26,46,0.15)" : "none", fontSize: "15px", lineHeight: "1.6", fontFamily: "DM Sans, sans-serif", whiteSpace: "pre-wrap" }}>
                   {msg.content === "__error__" ? (
                     <div>
-                      <p style={{ marginBottom: "10px" }}>{`J'ai du mal à te répondre là. Tu veux réessayer ?`}</p>
+                      <p style={{ marginBottom: "12px", fontStyle: "italic", lineHeight: "1.6" }}>
+                        {`J'ai du mal à te répondre là — une petite pause technique. Tu veux réessayer dans quelques secondes ?`}
+                      </p>
                       <button onClick={() => {
                         const msgs = chatMessages.filter(m => m.content !== "__error__");
                         setChatMessages(msgs);
@@ -880,8 +893,21 @@ export default function Firmament() {
                           setChatMessages([...msgs, { role: "assistant", content: "__error__" }]);
                         }).finally(() => setChatLoading(false));
                       }}
-                        style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", border: "none", borderRadius: "8px", padding: "6px 12px", fontSize: "12px", cursor: "pointer", fontFamily: "DM Sans" }}>
+                        style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", border: "none", borderRadius: "8px", padding: "8px 14px", fontSize: "13px", cursor: "pointer", fontFamily: "DM Sans", fontWeight: 500 }}>
                         Réessayer
+                      </button>
+                    </div>
+                  ) : msg.content === "__error_unconfirmed__" ? (
+                    <div>
+                      <p style={{ marginBottom: "12px", fontStyle: "italic", lineHeight: "1.6" }}>
+                        {`Pour que je puisse te répondre, il faut d'abord valider ton adresse mail. Vérifie ta boîte — l'email vient de frmmnt.fr. Tu ne le trouves pas ?`}
+                      </p>
+                      <button onClick={async () => {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (user?.email) await supabase.auth.resend({ type: "signup", email: user.email });
+                      }}
+                        style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", border: "none", borderRadius: "8px", padding: "8px 14px", fontSize: "13px", cursor: "pointer", fontFamily: "DM Sans", fontWeight: 500, marginRight: "8px" }}>
+                        Renvoyer l&apos;email
                       </button>
                     </div>
                   ) : msg.content}

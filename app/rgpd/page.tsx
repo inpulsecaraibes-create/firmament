@@ -6,13 +6,13 @@ export default function RGPD() {
       <p style={{ color: "#B0A098", fontSize: "13px", marginBottom: "32px" }}>Dernière mise à jour : mai 2026</p>
 
       {[
-        { title: "Qui collecte vos données ?", content: "Duleme & Cie — 27, chemin Malanga, 97215 Rivière Salée — bonjour@dulemeandcie.fr" },
+        { title: "Qui collecte vos données ?", content: "Duleme & Cie — 27, chemin Malanga, 97215 Rivière Salée — admin@frmmnt.fr" },
         { title: "Ce que nous collectons", content: "Prénom, adresse email professionnelle, nom ou secteur de l'entreprise, ancienneté en tant que dirigeant, état du moment. Contenus des conversations avec Téfi, smart to-dos, décisions prises, objectifs formulés." },
         { title: "Pourquoi nous le collectons", content: "Pour faire fonctionner FIRMAMENT — vous identifier, sauvegarder vos données, personnaliser les réponses de Téfi et vous envoyer les communications que vous avez acceptées." },
         { title: "Où vos données sont stockées", content: "Base de données Supabase hébergée en Europe (West EU — Irlande). Vos conversations sont chiffrées en transit et au repos. Elles ne quittent pas FIRMAMENT." },
         { title: "Durée de conservation", content: "Durée de votre abonnement ou compte actif + 12 mois après fermeture. Vous pouvez demander la suppression à tout moment." },
         { title: "Pas de partage ni revente", content: "Nous ne vendons pas vos données. Nous ne les partageons avec aucun tiers sauf nécessité technique (hébergeurs listés dans les mentions légales)." },
-        { title: "Vos droits", content: "Accès, rectification, suppression depuis vos Paramètres FIRMAMENT ou par email à bonjour@dulemeandcie.fr. Réponse sous 30 jours." },
+        { title: "Vos droits", content: "Accès, rectification, suppression depuis vos Paramètres FIRMAMENT ou par email à admin@frmmnt.fr. Réponse sous 30 jours." },
         { title: "Cookies", content: "Uniquement des cookies fonctionnels (authentification, session). Aucun cookie publicitaire ni de suivi tiers. Vous pouvez refuser les non-essentiels via la bannière à votre première visite." },
       ].map(({ title, content }) => (
         <div key={title} style={{ marginBottom: "24px" }}>

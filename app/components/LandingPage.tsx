@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import Logo from "./Logo";
-import { createClient } from "@/app/lib/supabase/client";
 
 interface LandingPageProps {
   onStart: () => void;
@@ -43,86 +42,9 @@ const IS_ISNT = {
   ],
 };
 
-const OFFERS = [
-  {
-    name: "FIRMAMENT",
-    subtitle: "Découverte",
-    price: "Gratuit",
-    duration: "30 jours complets",
-    features: ["Dumps illimités avec Téfi", "Smart to-do séquencé", "Objectif Aimant", "Le Point hebdomadaire"],
-    cta: "Commencer gratuitement",
-    highlight: false,
-  },
-  {
-    name: "FIRMAMENT Pro",
-    subtitle: "Solo",
-    price: "12,50 €",
-    duration: "par mois",
-    features: ["Tout inclus sans limite", "Mémoire longue de Téfi", "Export agenda ICS", "Notifications intelligentes", "Decision log complet"],
-    cta: "S'abonner",
-    highlight: true,
-  },
-  {
-    name: "FONDATION / IMPÉRIUM",
-    subtitle: "Accompagnement dirigeants",
-    price: "Sur devis",
-    duration: "",
-    features: ["Tout FIRMAMENT Pro inclus", "Modules de formation", "Sessions live avec formateur", "Suivi personnalisé Téfi"],
-    cta: "Contacter Duleme & Cie",
-    highlight: false,
-  },
-  {
-    name: "RÉVÉLATION",
-    subtitle: "Audit Neurosciences & Business",
-    price: "10 000 €",
-    duration: "",
-    features: ["Audit complet Neurosciences & Business", "Espace RÉVÉLATION dédié", "Suivi intensif avec Téfi", "FIRMAMENT Pro inclus"],
-    cta: "Contacter Duleme & Cie",
-    highlight: true,
-  },
-];
-
 export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
-  const [formData, setFormData] = useState({ prenom: "", email: "", entreprise: "", anciennete: "", etat: "", parrain: "" });
-  const [formSent, setFormSent] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
   const [cookieAccepted, setCookieAccepted] = useState<boolean | null>(null);
-  const supabase = createClient();
 
-  async function handleForm(e: React.FormEvent) {
-    e.preventDefault();
-    if (!formData.prenom || !formData.email) return;
-    setFormLoading(true);
-    await supabase.from("leads").insert({
-      email: formData.email.trim().toLowerCase(),
-      source: "landing_form",
-      brain_dump: JSON.stringify(formData),
-    });
-    setFormLoading(false);
-    setFormSent(true);
-  }
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    backgroundColor: "transparent",
-    color: "var(--texte)",
-    borderBottom: "1.5px solid rgba(26,18,16,0.15)",
-    borderTop: "none", borderLeft: "none", borderRight: "none",
-    fontSize: "15px", padding: "12px 4px",
-    fontFamily: "DM Sans, sans-serif",
-    transition: "border-color 0.2s",
-    marginBottom: "16px",
-  };
-
-  const pillStyle = (selected: boolean): React.CSSProperties => ({
-    padding: "10px 16px", borderRadius: "20px",
-    border: `1.5px solid ${selected ? "var(--bordeaux)" : "rgba(92,26,46,0.15)"}`,
-    backgroundColor: selected ? "var(--bordeaux-light)" : "transparent",
-    color: selected ? "var(--bordeaux)" : "var(--texte-secondary)",
-    fontSize: "13px", fontFamily: "DM Sans, sans-serif",
-    cursor: "pointer", fontWeight: selected ? 500 : 400,
-    transition: "all 0.15s",
-  });
 
   return (
     <div style={{ backgroundColor: "var(--fond)", minHeight: "100dvh", fontFamily: "DM Sans, sans-serif" }}>
@@ -289,108 +211,7 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
         </div>
       </section>
 
-      {/* OFFRES */}
-      <section id="offres" style={{ padding: "60px 24px" }}>
-        <div style={{ maxWidth: "780px", margin: "0 auto" }}>
-          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "28px", fontWeight: 300, color: "var(--texte)", textAlign: "center", marginBottom: "8px" }}>
-            Les offres Duleme & Cie
-          </h2>
-          <p style={{ color: "var(--texte-discret)", fontSize: "14px", textAlign: "center", marginBottom: "40px" }}>
-            FIRMAMENT est le fil conducteur de tous nos accompagnements.
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
-            {OFFERS.map((o) => (
-              <div key={o.name} style={{
-                backgroundColor: o.highlight ? "var(--bordeaux)" : "var(--fond-blanc)",
-                border: `1px solid ${o.highlight ? "transparent" : "rgba(26,18,16,0.08)"}`,
-                borderRadius: "14px", padding: "28px 24px",
-                display: "flex", flexDirection: "column",
-              }}>
-                <p style={{ fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: o.highlight ? "rgba(248,245,240,0.5)" : "var(--texte-discret)", marginBottom: "4px" }}>{o.subtitle}</p>
-                <h3 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontWeight: 400, color: o.highlight ? "var(--fond-blanc)" : "var(--texte)", marginBottom: "12px" }}>{o.name}</h3>
-                <div style={{ marginBottom: "20px" }}>
-                  <span style={{ fontSize: "28px", fontWeight: 600, color: o.highlight ? "var(--fond-blanc)" : "var(--texte)", fontFamily: "Cormorant Garamond, serif" }}>{o.price}</span>
-                  {o.duration && <span style={{ fontSize: "13px", color: o.highlight ? "rgba(248,245,240,0.6)" : "var(--texte-discret)", marginLeft: "6px" }}>{o.duration}</span>}
-                </div>
-                <ul style={{ listStyle: "none", padding: 0, flex: 1, marginBottom: "20px" }}>
-                  {o.features.map((f, i) => (
-                    <li key={i} style={{ fontSize: "13px", color: o.highlight ? "rgba(248,245,240,0.8)" : "var(--texte-secondary)", padding: "5px 0", display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                      <span style={{ color: o.highlight ? "rgba(248,245,240,0.5)" : "var(--or)", flexShrink: 0 }}>·</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <button onClick={onStart}
-                  style={{
-                    backgroundColor: o.highlight ? "var(--fond-blanc)" : "var(--bordeaux)",
-                    color: o.highlight ? "var(--bordeaux)" : "var(--fond-blanc)",
-                    borderRadius: "10px", padding: "12px 16px",
-                    border: "none", cursor: "pointer",
-                    fontSize: "13px", fontFamily: "DM Sans", fontWeight: 500,
-                  }}>
-                  {o.cta}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FORMULAIRE INSCRIPTION */}
-      <section style={{ padding: "60px 24px", backgroundColor: "var(--fond-blanc)" }}>
-        <div style={{ maxWidth: "480px", margin: "0 auto" }}>
-          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "28px", fontWeight: 300, color: "var(--texte)", textAlign: "center", marginBottom: "8px" }}>
-            Tu préfères t'inscrire d'abord ?
-          </h2>
-          <p style={{ color: "var(--texte-discret)", fontSize: "14px", textAlign: "center", marginBottom: "32px" }}>
-            Laisse tes coordonnées — on te contacte pour t'accueillir.
-          </p>
-
-          {formSent ? (
-            <div style={{ textAlign: "center", padding: "32px" }}>
-              <p style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "22px", color: "var(--texte)", marginBottom: "8px" }}>Tu es sur la liste.</p>
-              <p style={{ color: "var(--texte-discret)", fontSize: "14px" }}>Tu recevras ton accès par email sous peu.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleForm}>
-              <input placeholder="Prénom *" value={formData.prenom} onChange={e => setFormData({ ...formData, prenom: e.target.value })} required
-                style={inputStyle} onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }} onBlur={e => { e.target.style.borderBottomColor = "rgba(26,18,16,0.15)"; }} />
-              <input type="email" placeholder="Email professionnel *" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required
-                style={inputStyle} onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }} onBlur={e => { e.target.style.borderBottomColor = "rgba(26,18,16,0.15)"; }} />
-              <input placeholder="Entreprise ou secteur" value={formData.entreprise} onChange={e => setFormData({ ...formData, entreprise: e.target.value })}
-                style={inputStyle} onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }} onBlur={e => { e.target.style.borderBottomColor = "rgba(26,18,16,0.15)"; }} />
-
-              <p style={{ fontSize: "13px", color: "var(--texte-secondary)", marginBottom: "10px" }}>Ancienneté en tant que dirigeant</p>
-              <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
-                {["Moins de 3 ans", "Plus de 3 ans"].map(opt => (
-                  <button type="button" key={opt} onClick={() => setFormData({ ...formData, anciennete: opt })} style={pillStyle(formData.anciennete === opt)}>{opt}</button>
-                ))}
-              </div>
-
-              <p style={{ fontSize: "13px", color: "var(--texte-secondary)", marginBottom: "10px" }}>En ce moment tu te sens…</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "24px" }}>
-                {["Dans le flou", "Surchargé", "En transition", "En croissance"].map(opt => (
-                  <button type="button" key={opt} onClick={() => setFormData({ ...formData, etat: opt })} style={pillStyle(formData.etat === opt)}>{opt}</button>
-                ))}
-              </div>
-
-              <input placeholder="Je viens de la part de… (optionnel)" value={formData.parrain} onChange={e => setFormData({ ...formData, parrain: e.target.value })}
-                style={{ ...inputStyle, fontSize: "13px", color: "var(--texte-discret)" }}
-                onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }} onBlur={e => { e.target.style.borderBottomColor = "rgba(26,18,16,0.15)"; }} />
-
-              <button type="submit" disabled={!formData.prenom || !formData.email || formLoading}
-                style={{
-                  backgroundColor: formData.prenom && formData.email && !formLoading ? "var(--bordeaux)" : "var(--texte-discret)",
-                  color: "var(--fond-blanc)", borderRadius: "12px", padding: "15px",
-                  fontSize: "15px", fontFamily: "DM Sans", fontWeight: 500,
-                  border: "none", width: "100%", cursor: formData.prenom && formData.email && !formLoading ? "pointer" : "not-allowed",
-                }}>
-                {formLoading ? "Envoi···" : "M'inscrire sur la liste →"}
-              </button>
-            </form>
-          )}
-        </div>
-      </section>
+      {/* Pas d'offres ni de formulaire sur la landing — tout passe par l'app */}
 
       {/* FOOTER */}
       <footer style={{ backgroundColor: "var(--fond)", borderTop: "1px solid rgba(26,18,16,0.08)", padding: "40px 24px" }}>
@@ -416,7 +237,7 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
               </div>
               <div>
                 <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--texte-discret)", marginBottom: "10px" }}>Contact</p>
-                <a href="mailto:bonjour@dulemeandcie.fr" style={{ fontSize: "13px", color: "var(--texte-secondary)", textDecoration: "none" }}>bonjour@dulemeandcie.fr</a>
+                <a href="mailto:admin@frmmnt.fr" style={{ fontSize: "13px", color: "var(--texte-secondary)", textDecoration: "none" }}>admin@frmmnt.fr</a>
               </div>
             </div>
           </div>
