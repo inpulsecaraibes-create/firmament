@@ -309,15 +309,21 @@ export default function Firmament() {
     });
 
     if (signUpError) {
-      setRegError("Une erreur est survenue. Vérifie ton adresse email.");
+      const msg = signUpError.message.toLowerCase();
+      if (msg.includes("already") || msg.includes("registered") || msg.includes("exist")) {
+        setRegError("__exists__"); // Signal spécial → affiche bouton connexion
+      } else if (msg.includes("password") || msg.includes("weak")) {
+        setRegError("Le mot de passe doit faire au moins 8 caractères.");
+      } else {
+        setRegError("Une erreur est survenue. Réessaie ou contacte-nous.");
+      }
       setRegLoading(false);
       return;
     }
 
     if (data.user) {
       setIsLoggedIn(true);
-      setNeedsConfirmation(true); // Montrer l'écran "vérifie ton email"
-      // L'onboarding se déclenchera après confirmation + reconnexion
+      setNeedsConfirmation(true);
     }
     setRegLoading(false);
   }
@@ -710,8 +716,19 @@ export default function Firmament() {
               </button>
             </div>
 
-            {regError && (
+            {regError && regError !== "__exists__" && (
               <p style={{ color: "#B00020", fontSize: "13px", marginBottom: "12px", textAlign: "center" }}>{regError}</p>
+            )}
+            {regError === "__exists__" && (
+              <div style={{ backgroundColor: "var(--fond-or)", borderRadius: "10px", padding: "12px 16px", marginBottom: "12px", textAlign: "center" }}>
+                <p style={{ fontSize: "13px", color: "var(--texte-secondary)", marginBottom: "10px", lineHeight: "1.5" }}>
+                  Cet email a déjà un espace FIRMAMENT.
+                </p>
+                <button type="button" onClick={() => { setLoginMode(true); setRegError(""); }}
+                  style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "8px", padding: "8px 16px", border: "none", cursor: "pointer", fontSize: "13px", fontFamily: "DM Sans", fontWeight: 500 }}>
+                  On se connaît déjà →
+                </button>
+              </div>
             )}
 
             <button type="submit" disabled={!regEmail.trim() || !regPassword || regLoading}
