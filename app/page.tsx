@@ -9,8 +9,9 @@ import ActionList from "./components/ActionList";
 import Logo from "./components/Logo";
 import AccueilConnecte from "./components/AccueilConnecte";
 import Onboarding from "./components/Onboarding";
+import LandingPage from "./components/LandingPage";
 
-type Screen = "home" | "onboarding" | "braindump" | "loading" | "response" | "register" | "chat";
+type Screen = "landing" | "home" | "onboarding" | "braindump" | "loading" | "response" | "register" | "chat";
 
 interface TefiResponse {
   observation: string;
@@ -193,7 +194,6 @@ export default function Firmament() {
         setIsLoggedIn(true);
         const name = user.user_metadata?.prenom || user.email?.split("@")[0] || "";
         setUserName(name);
-        // Vérifier si l'onboarding est fait
         const { data: profile } = await supabase
           .from("profiles")
           .select("onboarding_done")
@@ -204,6 +204,8 @@ export default function Firmament() {
         } else {
           setScreen("onboarding");
         }
+      } else {
+        setScreen("landing"); // Non connecté → landing page
       }
     });
   }, []);
@@ -396,6 +398,16 @@ export default function Firmament() {
     transition: "border-color 0.2s",
     marginBottom: "20px",
   };
+
+  // ─── LANDING PAGE ────────────────────────────────────────────────────────
+  if (screen === "landing") {
+    return (
+      <LandingPage
+        onStart={() => setScreen("braindump")}
+        onLogin={() => { setLoginMode(true); setScreen("register"); }}
+      />
+    );
+  }
 
   // ─── ONBOARDING ──────────────────────────────────────────────────────────
   if (screen === "onboarding") {

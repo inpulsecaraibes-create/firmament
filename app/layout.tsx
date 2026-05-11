@@ -2,8 +2,17 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FIRMAMENT — Duleme & Cie",
-  description: "Tu me dis ce que tu as dans la tête. FIRMAMENT t'aide à savoir quoi faire.",
+  title: "FIRMAMENT — Compagnon stratégique des dirigeants | Duleme & Cie",
+  description: "Tu me dis ce que tu as dans la tête. FIRMAMENT t'aide à savoir quoi faire. Clarifier, structurer, cadencer — avec Téfi, ton compagnon stratégique.",
+  keywords: "stratégie dirigeant, clarté mentale, productivité, prise de décision, Martinique, Duleme",
+  openGraph: {
+    title: "FIRMAMENT — Ton compagnon stratégique",
+    description: "Tu me dis ce que tu as dans la tête. FIRMAMENT t'aide à savoir quoi faire.",
+    url: "https://frmmnt.fr",
+    siteName: "FIRMAMENT",
+    locale: "fr_FR",
+    type: "website",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
