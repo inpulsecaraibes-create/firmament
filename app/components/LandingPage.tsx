@@ -63,13 +63,22 @@ const OFFERS = [
     highlight: true,
   },
   {
-    name: "FONDATION",
-    subtitle: "Formation dirigeants −3 ans",
-    price: "Sur invitation",
+    name: "FONDATION / IMPÉRIUM",
+    subtitle: "Accompagnement dirigeants",
+    price: "Sur devis",
     duration: "",
-    features: ["Tout FIRMAMENT Pro", "Modules de formation", "Sessions live avec formateur", "Suivi personnalisé"],
+    features: ["Tout FIRMAMENT Pro inclus", "Modules de formation", "Sessions live avec formateur", "Suivi personnalisé Téfi"],
     cta: "Contacter Duleme & Cie",
     highlight: false,
+  },
+  {
+    name: "RÉVÉLATION",
+    subtitle: "Audit Neurosciences & Business",
+    price: "10 000 €",
+    duration: "",
+    features: ["Audit complet Neurosciences & Business", "Espace RÉVÉLATION dédié", "Suivi intensif avec Téfi", "FIRMAMENT Pro inclus"],
+    cta: "Contacter Duleme & Cie",
+    highlight: true,
   },
 ];
 

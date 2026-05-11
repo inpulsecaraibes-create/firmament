@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Brain, Users, AlertCircle, Check, BarChart2 } from "lucide-react";
+import { Brain, Users, BarChart2 } from "lucide-react";
 import TextSize from "./TextSize";
 import ObjectifAimant from "./ObjectifAimant";
 import Thematiques, { Thematique } from "./Thematiques";
 import LePoint from "./LePoint";
 import LeRelais from "./LeRelais";
+import SwipeableAction, { ActionData } from "./SwipeableAction";
 import { createClient } from "@/app/lib/supabase/client";
 import { getCosmicLine } from "@/app/lib/cosmic";
 
@@ -16,13 +17,7 @@ interface AccueilConnecteProps {
   onSetObjectif: () => void;
 }
 
-interface TopAction {
-  id: string;
-  titre: string;
-  urgent: boolean;
-  done: boolean;
-  theme?: string;
-}
+type TopAction = ActionData & { theme?: string };
 
 const cosmicLine = getCosmicLine();
 
@@ -65,8 +60,11 @@ export default function AccueilConnecte({ userName, onDump, onSetObjectif }: Acc
       setTop3(actions.map(a => ({
         id: a.id,
         titre: a.titre,
-        urgent: a.urgent,
-        done: a.done,
+        urgent: a.urgent || false,
+        done: a.done || false,
+        is_priority: a.is_priority || false,
+        is_sleeping: a.is_sleeping || false,
+        deadline: a.deadline || null,
         theme: a.thematiques?.titre,
       })));
     }
@@ -160,44 +158,24 @@ export default function AccueilConnecte({ userName, onDump, onSetObjectif }: Acc
                 Fais un Dump — Téfi identifiera tes priorités.
               </p>
             ) : (
-              <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", padding: "4px 0", border: "1px solid rgba(26,18,16,0.07)" }}>
+              <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(26,18,16,0.07)", position: "relative" }}>
+                <p style={{ fontSize: "10px", color: "var(--texte-discret)", padding: "8px 16px 0", fontStyle: "italic" }}>
+                  ← glisse pour modifier · glisse → pour les options
+                </p>
                 {top3.map((action, i) => (
-                  <div key={action.id} style={{
-                    display: "flex", alignItems: "center", gap: "12px",
-                    padding: "12px 16px",
-                    borderBottom: i < top3.length - 1 ? "1px solid rgba(26,18,16,0.06)" : "none",
-                  }}>
-                    <button
-                      onClick={() => toggleAction(action.id, !action.done)}
-                      style={{
-                        width: "22px", height: "22px", borderRadius: "6px",
-                        border: `1.5px solid ${action.done ? "var(--vert)" : "rgba(92,26,46,0.2)"}`,
-                        backgroundColor: action.done ? "var(--vert)" : "transparent",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        flexShrink: 0, cursor: "pointer", transition: "all 0.15s",
+                  <div key={action.id} style={{ borderBottom: i < top3.length - 1 ? "1px solid rgba(26,18,16,0.06)" : "none", position: "relative", overflow: "hidden" }}>
+                    <SwipeableAction
+                      action={action}
+                      showIndex={i}
+                      onDone={toggleAction}
+                      onUpdate={(id, updates) => {
+                        setTop3(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+                        supabase.from("user_actions").update(updates).eq("id", id);
                       }}
-                    >
-                      {action.done && <Check size={12} color="white" strokeWidth={3} />}
-                    </button>
-                    <div style={{ flex: 1 }}>
-                      <p style={{
-                        fontSize: "14px", fontFamily: "DM Sans, sans-serif", lineHeight: "1.4",
-                        color: action.done ? "var(--texte-discret)" : "var(--texte-secondary)",
-                        textDecoration: action.done ? "line-through" : "none",
-                      }}>
-                        {action.titre}
-                      </p>
-                      {action.theme && (
-                        <p style={{ fontSize: "11px", color: "var(--texte-discret)", marginTop: "2px" }}>
-                          {action.theme}
-                        </p>
-                      )}
-                    </div>
-                    {action.urgent && !action.done && (
-                      <button onClick={() => toggleUrgent(action.id, false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
-                        <AlertCircle size={15} color="var(--bordeaux)" />
-                      </button>
-                    )}
+                      onTefiRebound={() => {
+                        onDump();
+                      }}
+                    />
                   </div>
                 ))}
               </div>

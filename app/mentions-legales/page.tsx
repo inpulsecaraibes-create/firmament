@@ -11,10 +11,10 @@ export default function MentionsLegales() {
         27, chemin Malanga<br />
         97215 Rivière Salée<br />
         Martinique, France<br />
-        Email : bonjour@dulemeandcie.fr<br />
+        Email : bonjour@dulemeandcie.fr<br />SAS, société par actions simplifiées<br />
         <br />
-        [SIRET : à compléter]<br />
-        [Numéro de déclaration organisme de formation : à compléter]
+        SIRET : 932 389 844 00014<br />
+        N° TVA : FR41932389844 · RCS Fort-de-France 932 389 844
       </p>
 
       <h2 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", marginTop: "24px" }}>Hébergement</h2>
