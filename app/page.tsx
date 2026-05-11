@@ -9,9 +9,8 @@ import ActionList from "./components/ActionList";
 import Logo from "./components/Logo";
 import AccueilConnecte from "./components/AccueilConnecte";
 import Onboarding from "./components/Onboarding";
-import LandingPage from "./components/LandingPage";
 
-type Screen = "landing" | "home" | "onboarding" | "braindump" | "loading" | "response" | "register" | "chat";
+type Screen = "home" | "onboarding" | "braindump" | "loading" | "response" | "register" | "chat";
 
 interface TefiResponse {
   observation: string;
@@ -178,6 +177,11 @@ export default function Firmament() {
   const [isListening, setIsListening] = useState(false);
 
   // Inscription
+  const [regPrenom, setRegPrenom] = useState("");
+  const [regTelephone, setRegTelephone] = useState("");
+  const [regLocalisation, setRegLocalisation] = useState("");
+  const [regEntreprise, setRegEntreprise] = useState("");
+  const [regParrain, setRegParrain] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -212,7 +216,7 @@ export default function Firmament() {
           setScreen("onboarding");
         }
       } else {
-        setScreen("landing"); // Non connecté → landing page
+        setScreen("braindump"); // Non connecté → directement le Dump
       }
     });
   }, []);
@@ -315,6 +319,7 @@ export default function Firmament() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: regEmail.trim().toLowerCase(),
       password: regPassword,
+      options: { data: { prenom: regPrenom.trim() } },
     });
 
     if (signUpError) {
@@ -331,6 +336,23 @@ export default function Firmament() {
     }
 
     if (data.user) {
+      // Sauvegarder les infos du profil
+      await supabase.from("profiles").upsert({
+        id: data.user.id,
+        email: regEmail.trim().toLowerCase(),
+        prenom: regPrenom.trim(),
+        telephone: regTelephone.trim(),
+        localisation: regLocalisation,
+        entreprise: regEntreprise.trim(),
+      });
+      if (regParrain.trim()) {
+        await supabase.from("leads").insert({
+          email: regEmail.trim().toLowerCase(),
+          source: "inscription",
+          brain_dump: JSON.stringify({ parrain: regParrain.trim() }),
+        });
+      }
+      setUserName(regPrenom.trim());
       setIsLoggedIn(true);
       setNeedsConfirmation(true);
     }
@@ -440,16 +462,6 @@ export default function Firmament() {
     transition: "border-color 0.2s",
     marginBottom: "20px",
   };
-
-  // ─── LANDING PAGE ────────────────────────────────────────────────────────
-  if (screen === "landing") {
-    return (
-      <LandingPage
-        onStart={() => setScreen("braindump")}
-        onLogin={() => { setLoginMode(true); setScreen("register"); }}
-      />
-    );
-  }
 
   // ─── ONBOARDING ──────────────────────────────────────────────────────────
   if (screen === "onboarding") {
@@ -742,11 +754,28 @@ export default function Firmament() {
 
         <div className="w-full max-w-sm">
           <form onSubmit={loginMode ? handleLogin : handleRegister}>
+            {!loginMode && (
+              <>
+                <input value={regPrenom} onChange={e => setRegPrenom(e.target.value)} placeholder="Prénom *" required
+                  style={inputStyle} onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }} onBlur={e => { e.target.style.borderBottomColor = "var(--texte-discret)"; }} />
+                <input value={regEntreprise} onChange={e => setRegEntreprise(e.target.value)} placeholder="Nom de l'entreprise *" required
+                  style={inputStyle} onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }} onBlur={e => { e.target.style.borderBottomColor = "var(--texte-discret)"; }} />
+                <input value={regTelephone} onChange={e => setRegTelephone(e.target.value)} placeholder="Téléphone (ex: +596 696 00 00 00)"
+                  style={inputStyle} onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }} onBlur={e => { e.target.style.borderBottomColor = "var(--texte-discret)"; }} />
+                <select value={regLocalisation} onChange={e => setRegLocalisation(e.target.value)}
+                  style={{ ...inputStyle, appearance: "none" as const }}>
+                  <option value="">Localisation</option>
+                  {["Martinique", "Guadeloupe", "Réunion", "Guyane", "Mayotte", "France métropolitaine", "Autre"].map(l => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
+              </>
+            )}
             <input
               type="email"
               value={regEmail}
               onChange={(e) => setRegEmail(e.target.value)}
-              placeholder="ton@email.com"
+              placeholder="Email *"
               required
               style={inputStyle}
               onFocus={(e) => { e.target.style.borderBottomColor = "var(--bordeaux)"; }}
@@ -757,7 +786,7 @@ export default function Firmament() {
                 type={showPassword ? "text" : "password"}
                 value={regPassword}
                 onChange={(e) => setRegPassword(e.target.value)}
-                placeholder={loginMode ? "Mot de passe" : "Choisis un mot de passe"}
+                placeholder={loginMode ? "Mot de passe" : "Mot de passe (min. 8 caractères)"}
                 required
                 style={{ ...inputStyle, paddingRight: "40px" }}
                 onFocus={(e) => { e.target.style.borderBottomColor = "var(--bordeaux)"; }}
@@ -768,6 +797,11 @@ export default function Firmament() {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            {!loginMode && (
+              <input value={regParrain} onChange={e => setRegParrain(e.target.value)} placeholder="Je viens de la part de… (optionnel)"
+                style={{ ...inputStyle, fontSize: "13px", color: "var(--texte-discret)" }}
+                onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }} onBlur={e => { e.target.style.borderBottomColor = "var(--texte-discret)"; }} />
+            )}
 
             {regError && regError !== "__exists__" && (
               <p style={{ color: "#B00020", fontSize: "13px", marginBottom: "12px", textAlign: "center" }}>{regError}</p>
