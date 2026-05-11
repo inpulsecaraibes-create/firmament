@@ -4,6 +4,11 @@ import { createClient } from "@/app/lib/supabase/server";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// RESEND_API_KEY check
+const resendKeyExists = !!process.env.RESEND_API_KEY;
+const resendKeyPrefix = process.env.RESEND_API_KEY?.slice(0, 10) || 'MISSING';
+console.log('[Resend] Key present:', resendKeyExists, '| Prefix:', resendKeyPrefix);
+
 export async function POST(request: Request) {
   try {
     const { email, priority, actions, brainDump } = await request.json();
