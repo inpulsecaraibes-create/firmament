@@ -44,6 +44,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            var t = localStorage.getItem('firmament_theme');
+            if(t) document.documentElement.setAttribute('data-theme', t);
+            var s = localStorage.getItem('firmament_text_size');
+            if(s) document.documentElement.style.fontSize = ['100%','115%','130%'][parseInt(s)] || '100%';
+          })();
+        ` }} />
+      </head>
       <body>{children}</body>
     </html>
   );

@@ -127,10 +127,18 @@ export default function AccueilConnecte({ userName, onDump, onSetObjectif }: Acc
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <TextSize />
-          <button onClick={() => setShowPoint(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", display: "flex", alignItems: "center", gap: "4px" }}>
-            <BarChart2 size={16} />
-            <span style={{ fontSize: "11px", fontFamily: "DM Sans" }}>Le Point</span>
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <a href="/decisions" style={{ color: "var(--texte-discret)", fontSize: "11px", fontFamily: "DM Sans", textDecoration: "none", display: "flex", alignItems: "center", gap: "3px" }}>
+              <span>⚖</span> Décisions
+            </a>
+            <button onClick={() => setShowPoint(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", display: "flex", alignItems: "center", gap: "4px" }}>
+              <BarChart2 size={14} />
+              <span style={{ fontSize: "11px", fontFamily: "DM Sans" }}>Le Point</span>
+            </button>
+            <a href="/parametres" style={{ color: "var(--texte-discret)", fontSize: "11px", fontFamily: "DM Sans", textDecoration: "none" }}>
+              ⚙
+            </a>
+          </div>
         </div>
       </div>
 

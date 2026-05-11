@@ -498,6 +498,13 @@ export default function Firmament() {
             onFocus={(e) => { e.target.style.borderBottomColor = "var(--bordeaux)"; }}
             onBlur={(e) => { e.target.style.borderBottomColor = "var(--texte-discret)"; }}
           />
+          {/* Compteur discret */}
+          {brainDump.trim().length > 20 && (
+            <p style={{ textAlign: "right", fontSize: "11px", color: "var(--texte-discret)", marginTop: "4px" }}>
+              {brainDump.length} caractères
+            </p>
+          )}
+
           {/* Étincelles */}
           {brainDump.trim().length === 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "12px" }}>

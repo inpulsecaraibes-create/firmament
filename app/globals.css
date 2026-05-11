@@ -20,6 +20,23 @@
   --vert: #1B3A2D;
 }
 
+/* MODE SOMBRE */
+[data-theme="dark"] {
+  --bordeaux: #7A2440;
+  --bordeaux-secondary: #5C1A2E;
+  --bordeaux-light: rgba(122,36,64,0.15);
+  --fond: #1A1210;
+  --fond-blanc: #231A16;
+  --fond-or: #2A2018;
+  --or: #C4A46B;
+  --or-accent: #E0C490;
+  --texte: #F0EAE2;
+  --texte-secondary: #D4C8BF;
+  --texte-tertiary: #A89990;
+  --texte-discret: #6A5A52;
+  --vert: #2D5A40;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

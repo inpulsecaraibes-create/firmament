@@ -165,10 +165,9 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
             FIRMAMENT
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <a href="#pilliers" style={{ color: "var(--texte-discret)", fontSize: "13px", textDecoration: "none" }}>La méthode</a>
-          <a href="#offres" style={{ color: "var(--texte-discret)", fontSize: "13px", textDecoration: "none" }}>Les offres</a>
-          <a href="https://dulemeandcie.fr" target="_blank" rel="noopener noreferrer" style={{ color: "var(--texte-discret)", fontSize: "13px", textDecoration: "none" }}>Duleme & Cie</a>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <a href="#pilliers" style={{ color: "var(--texte-discret)", fontSize: "13px", textDecoration: "none", display: "none" }} className="md-show">La méthode</a>
+          <a href="#offres" style={{ color: "var(--texte-discret)", fontSize: "13px", textDecoration: "none", display: "none" }} className="md-show">Les offres</a>
           <button onClick={onLogin}
             style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "10px", padding: "8px 16px", border: "none", cursor: "pointer", fontSize: "13px", fontFamily: "DM Sans", fontWeight: 500 }}>
             On se connaît déjà →
