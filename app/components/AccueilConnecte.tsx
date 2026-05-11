@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Brain, Users, BarChart2, Clock } from "lucide-react";
-import TextSize from "./TextSize";
+
 import ObjectifAimant from "./ObjectifAimant";
 import Thematiques, { Thematique } from "./Thematiques";
 import LePoint from "./LePoint";
@@ -147,36 +147,26 @@ export default function AccueilConnecte({ userName, emailVerified = true, onDump
         </div>
       )}
 
-      <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ padding: "16px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <p style={{ color: "var(--texte-discret)", fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "DM Sans" }}>
+          <p style={{ color: "var(--texte-discret)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "DM Sans" }}>
             FIRMAMENT
           </p>
-          <p style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontWeight: 300, color: "var(--texte)", marginTop: "2px" }}>
+          <p style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "20px", fontWeight: 300, color: "var(--texte)", marginTop: "2px" }}>
             {greeting}{userName ? `, ${userName}` : ""}
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <TextSize />
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <a href="/decisions" style={{ color: "var(--texte-discret)", fontSize: "11px", fontFamily: "DM Sans", textDecoration: "none", display: "flex", alignItems: "center", gap: "3px" }}>
-              <span>⚖</span> Décisions
-            </a>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              {daysLeft !== null && daysLeft <= 10 && daysLeft > 0 && (
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: daysLeft <= 5 ? "var(--bordeaux)" : "var(--or)", fontFamily: "DM Sans" }}>
-                  <Clock size={11} /> {daysLeft}j
-                </span>
-              )}
-              <button onClick={() => setShowPoint(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", display: "flex", alignItems: "center", gap: "4px" }}>
-                <BarChart2 size={14} />
-                <span style={{ fontSize: "11px", fontFamily: "DM Sans" }}>Le Point</span>
-              </button>
-            </div>
-            <a href="/parametres" style={{ color: "var(--texte-discret)", fontSize: "11px", fontFamily: "DM Sans", textDecoration: "none" }}>
-              ⚙
-            </a>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {daysLeft !== null && daysLeft <= 10 && daysLeft > 0 && (
+            <span style={{ fontSize: "11px", color: daysLeft <= 5 ? "var(--bordeaux)" : "var(--or)", fontFamily: "DM Sans", display: "flex", alignItems: "center", gap: "3px" }}>
+              <Clock size={11} /> {daysLeft}j
+            </span>
+          )}
+          <button onClick={() => setShowPoint(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", display: "flex", alignItems: "center", gap: "4px" }}>
+            <BarChart2 size={14} />
+            <span style={{ fontSize: "11px", fontFamily: "DM Sans" }}>Le Point</span>
+          </button>
+          <a href="/parametres" style={{ color: "var(--texte-discret)", fontSize: "16px", textDecoration: "none" }}>⚙</a>
         </div>
       </div>
 

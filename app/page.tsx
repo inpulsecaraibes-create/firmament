@@ -270,6 +270,50 @@ export default function Firmament() {
     await supabase.from("messages").insert({ conversation_id: conversationId, role, content });
   }
 
+  // Bug 3 fix : sauvegarder les tâches dans Supabase
+  async function saveTasks(tasks: { title: string; subtitle?: string; urgent?: boolean }[], context: string) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      // Stocker en localStorage pour migration après connexion
+      const existing = JSON.parse(localStorage.getItem("firmament_pending_tasks") || "[]");
+      localStorage.setItem("firmament_pending_tasks", JSON.stringify([...existing, { context, tasks }]));
+      return;
+    }
+
+    // Créer la thématique si elle n'existe pas
+    let themeId: string | null = null;
+    const { data: existingTheme } = await supabase
+      .from("thematiques").select("id").eq("user_id", user.id).eq("titre", context).single();
+    if (existingTheme) {
+      themeId = existingTheme.id;
+    } else {
+      const { data: newTheme } = await supabase
+        .from("thematiques").insert({ user_id: user.id, titre: context, ordre: Date.now() }).select().single();
+      themeId = newTheme?.id || null;
+    }
+
+    // Insérer les tâches
+    const toInsert = tasks.map((t, i) => ({
+      user_id: user.id,
+      thematique_id: themeId,
+      titre: t.title,
+      done: false,
+      urgent: t.urgent || false,
+      priority_order: i,
+    }));
+    await supabase.from("user_actions").insert(toInsert);
+  }
+
+  // Bug 3 : migrer les tâches du localStorage vers Supabase après connexion
+  async function migratePendingTasks() {
+    const pending = JSON.parse(localStorage.getItem("firmament_pending_tasks") || "[]");
+    if (pending.length === 0) return;
+    for (const { context, tasks } of pending) {
+      await saveTasks(tasks, context);
+    }
+    localStorage.removeItem("firmament_pending_tasks");
+  }
+
   async function handleClarify() {
     if (brainDump.trim().length < 10) return;
     setScreen("loading");
@@ -297,14 +341,17 @@ export default function Firmament() {
       ];
       setChatMessages(msgs);
 
-      // Si connecté → sauvegarder directement, sinon → inscription
+      // Bug 3 : sauvegarder les 3 actions du brain dump dans Supabase immédiatement
+      saveTasks(
+        data.actions.map((a: string) => ({ title: a })),
+        data.priority.slice(0, 60)
+      );
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         saveConversation(brainDump, msgs);
-        setScreen("response");
-      } else {
-        setScreen("response"); // Afficher la réponse, puis proposer inscription après
       }
+      setScreen("response");
     } catch {
       setError(true);
       setScreen("braindump");
@@ -337,6 +384,7 @@ export default function Firmament() {
     }
 
     if (data.user) {
+      await migratePendingTasks();
       // Sauvegarder les infos du profil
       await supabase.from("profiles").upsert({
         id: data.user.id,
@@ -378,8 +426,11 @@ export default function Firmament() {
     }
 
     setIsLoggedIn(true);
+    // Bug 3 : migrer les tâches pendantes
+    const { data: { user: u } } = await supabase.auth.getUser();
+    if (u) { await migratePendingTasks(); }
     saveConversation(brainDump, chatMessages);
-    setScreen("chat");
+    setScreen("home"); // → directement home après login
     setRegLoading(false);
   }
 
@@ -413,10 +464,19 @@ export default function Firmament() {
     setChatLoading(true);
     try {
       await callTefi(newMessages, (data) => {
-        const assistantMsg: ChatMessage = { role: "assistant", content: data.text, todo: data.todo || null };
+        let displayContent = data.text;
+        // Bug 2 : si Téfi génère un todo → sauvegarder dans Supabase, ne pas afficher dans le chat
+        if (data.todo) {
+          saveTasks(
+            data.todo.tasks.map((t: { title: string; urgent?: boolean }) => ({ title: t.title, urgent: t.urgent })),
+            data.todo.context
+          );
+          displayContent = (data.text || "") + "\n\n__goto_home__";
+        }
+        const assistantMsg: ChatMessage = { role: "assistant", content: displayContent, todo: null };
         setChatMessages([...newMessages, assistantMsg]);
         saveMessage("user", sentInput);
-        saveMessage("assistant", data.text);
+        saveMessage("assistant", displayContent);
       });
     } catch {
       // Bug B : message d'erreur avec bouton retry
@@ -688,14 +748,20 @@ export default function Firmament() {
           />
         )}
 
-        {/* "Continuer avec Téfi" seulement pour les utilisateurs connectés */}
+        {/* Boutons d'action */}
         {isLoggedIn && (
-          <div style={{ marginBottom: "32px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "32px" }}>
+            <button
+              onClick={() => setScreen("home")}
+              style={{ width: "100%", padding: "15px", borderRadius: "12px", backgroundColor: "var(--bordeaux)", border: "none", color: "var(--fond-blanc)", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, cursor: "pointer" }}
+            >
+              Je passe à l&apos;action →
+            </button>
             <button
               onClick={() => setScreen("chat")}
-              style={{ width: "100%", padding: "16px", borderRadius: "12px", backgroundColor: "var(--bordeaux)", border: "none", color: "var(--fond-blanc)", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+              style={{ width: "100%", padding: "14px", borderRadius: "12px", backgroundColor: "transparent", border: "1.5px solid rgba(92,26,46,0.2)", color: "var(--bordeaux)", fontSize: "14px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
             >
-              Continuer avec Téfi <ArrowRight size={16} />
+              On approfondit avec Téfi <ArrowRight size={14} />
             </button>
           </div>
         )}
@@ -855,17 +921,21 @@ export default function Firmament() {
   if (screen === "chat") {
     return (
       <main style={{ backgroundColor: "var(--fond)", minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(26,18,16,0.08)", display: "flex", alignItems: "center", gap: "12px", backgroundColor: "var(--fond-blanc)", position: "sticky", top: 0 }}>
-          <button onClick={() => setScreen("response")} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "var(--bordeaux)" }}>
-            <ArrowLeft size={20} />
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(26,18,16,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--fond-blanc)", position: "sticky", top: 0 }}>
+          <button
+            onClick={() => isLoggedIn ? setScreen("home") : setScreen("response")}
+            style={{ display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", color: "var(--bordeaux)", fontFamily: "DM Sans", fontSize: "14px", fontWeight: 500, padding: "4px" }}
+          >
+            <ArrowLeft size={18} />
+            {isLoggedIn ? "Mon espace" : "Retour"}
           </button>
-          <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "18px", fontStyle: "italic" }}>t</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "16px", fontStyle: "italic" }}>t</span>
+            </div>
+            <span style={{ fontFamily: "DM Sans", fontSize: "13px", fontWeight: 500, color: "var(--texte)" }}>Téfi</span>
           </div>
-          <div>
-            <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "14px", fontWeight: 500, color: "var(--texte)" }}>Téfi</p>
-            <p style={{ fontSize: "11px", color: "var(--texte-discret)" }}>ton compagnon stratégique</p>
-          </div>
+          <a href="/parametres" style={{ color: "var(--texte-discret)", fontSize: "18px", textDecoration: "none", padding: "4px" }}>⚙</a>
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -878,7 +948,22 @@ export default function Firmament() {
                   </div>
                 )}
                 <div style={{ maxWidth: "78%", backgroundColor: msg.role === "user" ? "var(--bordeaux)" : "var(--fond-blanc)", color: msg.role === "user" ? "var(--fond-blanc)" : "var(--texte-secondary)", borderRadius: msg.role === "user" ? "16px 0 16px 16px" : "0 16px 16px 16px", padding: "12px 16px", borderLeft: msg.role === "assistant" ? "2px solid rgba(92,26,46,0.15)" : "none", fontSize: "15px", lineHeight: "1.6", fontFamily: "DM Sans, sans-serif", whiteSpace: "pre-wrap" }}>
-                  {msg.content === "__error__" ? (
+                  {msg.content.includes("__goto_home__") ? (
+                    <div>
+                      <p style={{ marginBottom: "12px", lineHeight: "1.6" }}>
+                        {msg.content.replace("\n\n__goto_home__", "")}
+                      </p>
+                      <p style={{ marginBottom: "12px", fontStyle: "italic", color: "rgba(248,245,240,0.8)" }}>
+                        {`J'ai organisé tout ça dans ton espace.`}
+                      </p>
+                      <button
+                        onClick={() => setScreen("home")}
+                        style={{ backgroundColor: "rgba(248,245,240,0.15)", color: "var(--fond-blanc)", border: "1px solid rgba(248,245,240,0.3)", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", cursor: "pointer", fontFamily: "DM Sans", fontWeight: 500 }}
+                      >
+                        Voir mon espace →
+                      </button>
+                    </div>
+                  ) : msg.content === "__error__" ? (
                     <div>
                       <p style={{ marginBottom: "12px", fontStyle: "italic", lineHeight: "1.6" }}>
                         {`J'ai du mal à te répondre là — une petite pause technique. Tu veux réessayer dans quelques secondes ?`}
