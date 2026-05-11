@@ -8,8 +8,9 @@ import SmartTodo, { TodoTask } from "./components/SmartTodo";
 import ActionList from "./components/ActionList";
 import Logo from "./components/Logo";
 import AccueilConnecte from "./components/AccueilConnecte";
+import Onboarding from "./components/Onboarding";
 
-type Screen = "home" | "braindump" | "loading" | "response" | "register" | "chat";
+type Screen = "home" | "onboarding" | "braindump" | "loading" | "response" | "register" | "chat";
 
 interface TefiResponse {
   observation: string;
@@ -61,12 +62,22 @@ export default function Firmament() {
   const supabase = createClient();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
         setIsLoggedIn(true);
         const name = user.user_metadata?.prenom || user.email?.split("@")[0] || "";
         setUserName(name);
-        setScreen("home"); // Utilisateur connecté → écran d'accueil
+        // Vérifier si l'onboarding est fait
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_done")
+          .eq("id", user.id)
+          .single();
+        if (profile?.onboarding_done) {
+          setScreen("home");
+        } else {
+          setScreen("onboarding");
+        }
       }
     });
   }, []);
@@ -178,9 +189,9 @@ export default function Firmament() {
     }
 
     if (data.user) {
-      // Email confirmation requise — montrer l'écran d'attente
-      // La conversation sera sauvegardée après confirmation
-      setNeedsConfirmation(true);
+      setIsLoggedIn(true);
+      setNeedsConfirmation(true); // Montrer l'écran "vérifie ton email"
+      // L'onboarding se déclenchera après confirmation + reconnexion
     }
     setRegLoading(false);
   }
@@ -253,6 +264,11 @@ export default function Firmament() {
     transition: "border-color 0.2s",
     marginBottom: "20px",
   };
+
+  // ─── ONBOARDING ──────────────────────────────────────────────────────────
+  if (screen === "onboarding") {
+    return <Onboarding onComplete={() => setScreen("home")} />;
+  }
 
   // ─── ÉCRAN ACCUEIL CONNECTÉ ──────────────────────────────────────────────
   if (screen === "home") {
