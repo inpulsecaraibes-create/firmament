@@ -8,6 +8,7 @@ import Thematiques, { Thematique } from "./Thematiques";
 import LePoint from "./LePoint";
 import LeRelais from "./LeRelais";
 import SwipeableAction, { ActionData } from "./SwipeableAction";
+import BottomNav from "./BottomNav";
 import { createClient } from "@/app/lib/supabase/client";
 import { getCosmicLine } from "@/app/lib/cosmic";
 
@@ -242,15 +243,17 @@ export default function AccueilConnecte({ userName, onDump, onSetObjectif }: Acc
         </button>
       </div>
 
-      {/* Ligne cosmique */}
+      {/* Ligne cosmique au-dessus de la nav */}
       <p style={{
-        position: "fixed", bottom: "4px", left: 0, right: 0,
+        position: "fixed", bottom: "56px", left: 0, right: 0,
         textAlign: "center", color: "var(--texte-discret)",
         fontSize: "10px", fontStyle: "italic", fontFamily: "DM Sans",
         pointerEvents: "none",
       }}>
         {cosmicLine}
       </p>
+
+      <BottomNav active="home" onHome={() => {}} onDump={onDump} />
     </main>
   );
 }

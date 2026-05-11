@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Send, X, Check } from "lucide-react";
 import { createClient } from "@/app/lib/supabase/client";
+import { generateICS, downloadICS } from "@/app/lib/ics";
 
 interface LePointProps {
   onClose: () => void;
@@ -66,6 +67,24 @@ Parle à la deuxième personne, en ami stratège, sans jugement.`,
       setSummary("Une semaine de travail. Continue.");
     }
     setLoadingAI(false);
+  }
+
+  function handleExportICS() {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setHours(9, 0, 0, 0);
+
+    const events = actionsRemaining
+      .filter(a => a.keep)
+      .map((a, i) => ({
+        title: `FIRMAMENT — ${a.titre}`,
+        date: new Date(nextWeek.getTime() + i * 24 * 60 * 60 * 1000),
+        description: `Action FIRMAMENT · Le Point de la semaine`,
+      }));
+
+    if (events.length === 0) return;
+    const ics = generateICS(events);
+    downloadICS(ics, `firmament-point-${new Date().toISOString().split("T")[0]}.ics`);
   }
 
   async function handleSend() {
@@ -172,11 +191,15 @@ Parle à la deuxième personne, en ami stratège, sans jugement.`,
               </div>
             )}
 
-            {/* Bouton envoyer */}
+            {/* Boutons */}
             <button onClick={handleSend} disabled={sending || loadingAI}
-              style={{ width: "100%", backgroundColor: !sending && !loadingAI ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "15px", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, border: "none", cursor: !sending && !loadingAI ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+              style={{ width: "100%", backgroundColor: !sending && !loadingAI ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "15px", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, border: "none", cursor: !sending && !loadingAI ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "10px" }}>
               <Send size={15} />
               {sending ? "Envoi···" : "Envoyer ce Point par email"}
+            </button>
+            <button onClick={handleExportICS}
+              style={{ width: "100%", backgroundColor: "transparent", color: "var(--texte-secondary)", border: "1px solid rgba(26,18,16,0.12)", borderRadius: "12px", padding: "13px", fontSize: "14px", fontFamily: "DM Sans", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+              📅 Exporter vers mon agenda (.ics)
             </button>
           </>
         )}
