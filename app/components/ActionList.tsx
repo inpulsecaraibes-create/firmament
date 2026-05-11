@@ -52,16 +52,22 @@ export default function ActionList({ actions, initialChecked, isLoggedIn = true,
               borderRadius: "10px", padding: "12px 14px", marginBottom: "6px", zIndex: 10,
               boxShadow: "0 4px 16px rgba(26,18,16,0.08)",
             }}>
-              <p style={{ fontSize: "13px", color: "var(--texte-secondary)", fontFamily: "DM Sans", marginBottom: "10px", lineHeight: "1.5" }}>
-                Pour aller plus loin sur ce point, crée ton espace FIRMAMENT.
-              </p>
+              {/* Bug F — ton de Téfi, pas un message système */}
+              <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", marginBottom: "10px" }}>
+                <div style={{ width: "22px", height: "22px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "12px", fontStyle: "italic" }}>t</span>
+                </div>
+                <p style={{ fontSize: "13px", color: "var(--texte-secondary)", fontFamily: "DM Sans", lineHeight: "1.55", fontStyle: "italic" }}>
+                  {`Je vois que ça t'intéresse d'aller plus loin. J'aimerais qu'on en parle vraiment — pour ça, il me faut ton espace. Ça prend 30 secondes.`}
+                </p>
+              </div>
               <button onClick={() => { setBubbleIndex(null); onRegister?.(); }}
                 style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "8px", padding: "8px 14px", border: "none", cursor: "pointer", fontSize: "13px", fontFamily: "DM Sans", fontWeight: 500, marginRight: "8px" }}>
                 Créer mon espace
               </button>
               <button onClick={() => setBubbleIndex(null)}
                 style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", fontSize: "12px", fontFamily: "DM Sans" }}>
-                Plus tard
+                Pas maintenant
               </button>
             </div>
           )}

@@ -12,9 +12,10 @@ export async function POST(request: Request) {
 
     const { besoin, urgence, message } = await request.json();
 
+    // Double destinataire : Hotmail + admin frmmnt
     await resend.emails.send({
       from: "FIRMAMENT Relais <tefi@frmmnt.fr>",
-      to: "inpulsecaraibes@gmail.com",
+      to: ["dulemeandcie@hotmail.com", "inpulsecaraibes@gmail.com"],
       subject: `Le Relais — ${urgence === "oui" ? "🔴 URGENT" : "Demande"} : ${besoin}`,
       html: `
 <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 32px;">

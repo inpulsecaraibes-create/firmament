@@ -18,7 +18,7 @@ const BESOINS = [
 const RESULT_MESSAGES: Record<string, { title: string; desc: string }> = {
   diagnostic: {
     title: "Le Diagnostic",
-    desc: "On te répond par email sous 48h avec les éléments dont tu as besoin.",
+    desc: "L'équipe reviendra vers toi très vite.",
   },
   levier: {
     title: "Le Levier",

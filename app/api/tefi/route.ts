@@ -86,21 +86,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ type: "chat", text, todo });
     }
 
-    // Brain dump initial (écran 2)
+    // Brain dump initial (écran 2) — nouvelle approche : structure d'abord, une seule question après
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 1024,
+      max_tokens: 1500,
       system: SYSTEM_PROMPT,
       messages: [
         {
           role: "user",
-          content: `Voici mon brain dump :\n\n${brainDump}\n\nRéponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans backticks, avec ce format exact :
+          content: `Voici ce que j'ai à faire / ce qui tourne dans ma tête :\n\n${brainDump}\n\nRéponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans backticks, avec ce format exact :
 {
-  "observation": "une phrase humaine sur ce que tu entends vraiment",
-  "priority": "la priorité absolue, une seule, la plus bloquante",
-  "actions": ["action 1 courte et actionnable", "action 2", "action 3"],
-  "question": "une question ouverte pour continuer la conversation"
-}`,
+  "observation": "une phrase d'observation humaine et directe — ce que tu entends vraiment derrière les mots",
+  "priority": "LA priorité absolue — une seule, la plus bloquante pour tout le reste",
+  "actions": ["action 1 — courte, actionnable, immédiate", "action 2", "action 3"],
+  "question": "UNE SEULE question ouverte — soit 'Est-ce que tu veux qu on approfondisse quelque chose, ou tu passes directement à l action ?' soit une question plus ciblée si quelque chose est vraiment ambigu"
+}
+
+Important : Ne pose jamais plusieurs questions. Structure d'abord, une seule question après.`,
         },
       ],
     });

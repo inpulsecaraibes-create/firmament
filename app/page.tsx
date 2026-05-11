@@ -171,6 +171,7 @@ export default function Firmament() {
   const [error, setError] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(true);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [userName, setUserName] = useState("");
   const [loginMode, setLoginMode] = useState(false);
@@ -192,13 +193,19 @@ export default function Firmament() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
         setIsLoggedIn(true);
-        const name = user.user_metadata?.prenom || user.email?.split("@")[0] || "";
+        setEmailVerified(user.email_confirmed_at !== null);
+        // Bug C fix : ne JAMAIS utiliser l'email comme prénom
+        const { data: profileData } = await supabase.from("profiles").select("prenom").eq("id", user.id).single();
+        const name = profileData?.prenom || user.user_metadata?.prenom || "";
         setUserName(name);
+        // Bug D fix : routing fiable basé sur onboarding_done
         const { data: profile } = await supabase
           .from("profiles")
-          .select("onboarding_done")
+          .select("onboarding_done, prenom")
           .eq("id", user.id)
           .single();
+        // Mettre à jour le prénom si disponible dans le profil
+        if (profile?.prenom) setUserName(profile.prenom);
         if (profile?.onboarding_done) {
           setScreen("home");
         } else {
@@ -353,6 +360,26 @@ export default function Firmament() {
     setRegLoading(false);
   }
 
+  // Bug B fix : appel API avec try/catch + limite historique 20 messages
+  async function callTefi(messages: ChatMessage[], onSuccess: (data: { text: string; todo?: { context: string; tasks: import("./components/SmartTodo").TodoTask[] } | null }) => void) {
+    // Limiter aux 20 derniers messages pour éviter les timeouts
+    const limited = messages.slice(-20);
+    try {
+      const res = await fetch("/api/tefi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: limited }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      onSuccess(data);
+    } catch (err) {
+      console.error("Téfi API error:", err);
+      throw err;
+    }
+  }
+
   async function handleChatSend() {
     if (!chatInput.trim() || chatLoading) return;
     const userMsg: ChatMessage = { role: "user", content: chatInput };
@@ -362,25 +389,40 @@ export default function Firmament() {
     setChatInput("");
     setChatLoading(true);
     try {
-      const res = await fetch("/api/tefi", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+      await callTefi(newMessages, (data) => {
+        const assistantMsg: ChatMessage = { role: "assistant", content: data.text, todo: data.todo || null };
+        setChatMessages([...newMessages, assistantMsg]);
+        saveMessage("user", sentInput);
+        saveMessage("assistant", data.text);
       });
-      const data = await res.json();
-      const assistantMsg: ChatMessage = {
-        role: "assistant",
-        content: data.text,
-        todo: data.todo || null,
-      };
-      setChatMessages([...newMessages, assistantMsg]);
-      saveMessage("user", sentInput);
-      saveMessage("assistant", data.text);
     } catch {
+      // Bug B : message d'erreur avec bouton retry
       setChatMessages([...newMessages, {
         role: "assistant",
-        content: "J'ai besoin d'un moment. Reviens dans quelques minutes — je serai là.",
+        content: "__error__",
       }]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  async function handleActionClick(title: string) {
+    // Bug A fix : afficher titre propre, envoyer JSON silencieusement à l'API
+    const visibleMsg: ChatMessage = { role: "user", content: title }; // titre propre visible
+    const apiMessages = [
+      ...chatMessages,
+      { role: "user" as const, content: JSON.stringify({ action_clicked: title }) }, // JSON pour l'API seulement
+    ];
+    const displayMessages = [...chatMessages, visibleMsg];
+    setChatMessages(displayMessages);
+    setScreen("chat");
+    setChatLoading(true);
+    try {
+      await callTefi(apiMessages, (data) => {
+        setChatMessages([...displayMessages, { role: "assistant", content: data.text, todo: data.todo || null }]);
+      });
+    } catch {
+      setChatMessages([...displayMessages, { role: "assistant", content: "__error__" }]);
     } finally {
       setChatLoading(false);
     }
@@ -419,6 +461,7 @@ export default function Firmament() {
     return (
       <AccueilConnecte
         userName={userName}
+        emailVerified={emailVerified}
         onDump={() => setScreen("braindump")}
         onSetObjectif={() => setScreen("braindump")}
       />
@@ -598,18 +641,9 @@ export default function Firmament() {
             onRegister={() => setScreen("register")}
             onActionClick={(title) => {
               if (isLoggedIn) {
-                const msg = { role: "user" as const, content: JSON.stringify({ action_clicked: title }) };
-                const newMsgs = [...chatMessages, msg];
-                setChatMessages(newMsgs);
-                setScreen("chat");
-                fetch("/api/tefi", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ messages: newMsgs }),
-                }).then(r => r.json()).then(data => {
-                  setChatMessages([...newMsgs, { role: "assistant", content: data.text }]);
-                });
+                handleActionClick(title);
               }
+              // Bug F : non connecté → géré dans ActionList (bulle Téfi)
             }}
           />
         </div>
@@ -799,7 +833,24 @@ export default function Firmament() {
                   </div>
                 )}
                 <div style={{ maxWidth: "78%", backgroundColor: msg.role === "user" ? "var(--bordeaux)" : "var(--fond-blanc)", color: msg.role === "user" ? "var(--fond-blanc)" : "var(--texte-secondary)", borderRadius: msg.role === "user" ? "16px 0 16px 16px" : "0 16px 16px 16px", padding: "12px 16px", borderLeft: msg.role === "assistant" ? "2px solid rgba(92,26,46,0.15)" : "none", fontSize: "15px", lineHeight: "1.6", fontFamily: "DM Sans, sans-serif", whiteSpace: "pre-wrap" }}>
-                  {msg.content}
+                  {msg.content === "__error__" ? (
+                    <div>
+                      <p style={{ marginBottom: "10px" }}>{`J'ai du mal à te répondre là. Tu veux réessayer ?`}</p>
+                      <button onClick={() => {
+                        const msgs = chatMessages.filter(m => m.content !== "__error__");
+                        setChatMessages(msgs);
+                        setChatLoading(true);
+                        callTefi(msgs, (data) => {
+                          setChatMessages([...msgs, { role: "assistant", content: data.text }]);
+                        }).catch(() => {
+                          setChatMessages([...msgs, { role: "assistant", content: "__error__" }]);
+                        }).finally(() => setChatLoading(false));
+                      }}
+                        style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", border: "none", borderRadius: "8px", padding: "6px 12px", fontSize: "12px", cursor: "pointer", fontFamily: "DM Sans" }}>
+                        Réessayer
+                      </button>
+                    </div>
+                  ) : msg.content}
                 </div>
               </div>
               {msg.todo && msg.role === "assistant" && (

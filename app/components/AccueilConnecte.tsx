@@ -14,6 +14,7 @@ import { getCosmicLine } from "@/app/lib/cosmic";
 
 interface AccueilConnecteProps {
   userName: string;
+  emailVerified?: boolean;
   onDump: () => void;
   onSetObjectif: () => void;
 }
@@ -22,7 +23,7 @@ type TopAction = ActionData & { theme?: string };
 
 const cosmicLine = getCosmicLine();
 
-export default function AccueilConnecte({ userName, onDump, onSetObjectif }: AccueilConnecteProps) {
+export default function AccueilConnecte({ userName, emailVerified = true, onDump, onSetObjectif }: AccueilConnecteProps) {
   const [objectif, setObjectif] = useState<{ phrase: string; progress: number } | null>(null);
   const [top3, setTop3] = useState<TopAction[]>([]);
   const [thematiques, setThematiques] = useState<Thematique[]>([]);
@@ -116,6 +117,27 @@ export default function AccueilConnecte({ userName, onDump, onSetObjectif }: Acc
       {/* Header */}
       {showPoint && <LePoint onClose={() => setShowPoint(false)} />}
       {showRelais && <LeRelais onClose={() => setShowRelais(false)} />}
+
+      {/* Bug E — bannière email non validé */}
+      {!emailVerified && (
+        <div style={{ backgroundColor: "var(--fond-or)", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+          <p style={{ fontSize: "12px", color: "var(--texte-secondary)", flex: 1 }}>
+            📧 Vérifie ta boîte mail pour activer ton compte.
+          </p>
+          <button
+            onClick={async () => {
+              const supabase = createClient();
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user?.email) {
+                await supabase.auth.resend({ type: "signup", email: user.email });
+                alert("Email renvoyé !");
+              }
+            }}
+            style={{ background: "none", border: "1px solid var(--or)", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer", color: "var(--or)", fontFamily: "DM Sans", fontWeight: 500, flexShrink: 0 }}>
+            Renvoyer
+          </button>
+        </div>
+      )}
 
       <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
