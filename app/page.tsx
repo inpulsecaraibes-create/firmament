@@ -27,44 +27,82 @@ interface ChatMessage {
 
 const cosmicLine = getCosmicLine();
 
-// Composant bloc email résumé (non connecté)
-function ResumeEmailBlock({ brainDump, priority, actions, onRegister }: {
-  brainDump: string; priority: string; actions: string[]; onRegister: () => void;
+// Composant conclusion — une seule porte claire
+function ResumeEmailBlock({ brainDump, priority, actions, onRegister, onLogin }: {
+  brainDump: string; priority: string; actions: string[]; onRegister: () => void; onLogin: () => void;
 }) {
-  const [showEmail, setShowEmail] = useState(false);
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [state, setState] = useState<"idle" | "sent" | "exists">("idle");
+  const supabase = createClient();
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
     setSending(true);
+
+    // Vérifier si l'email existe déjà dans profiles
+    const { data } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", email.trim().toLowerCase())
+      .single();
+
+    if (data) {
+      setSending(false);
+      setState("exists");
+      return;
+    }
+
     await fetch("/api/resume-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, priority, actions, brainDump }),
     });
     setSending(false);
-    setSent(true);
+    setState("sent");
   }
 
-  if (sent) {
+  if (state === "sent") {
     return (
-      <div style={{ backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(92,26,46,0.12)", borderRadius: "12px", padding: "20px 22px", marginBottom: "20px", textAlign: "center" }}>
-        <p style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "18px", color: "var(--texte)", marginBottom: "6px" }}>
+      <div style={{ backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(92,26,46,0.12)", borderRadius: "12px", padding: "24px", marginBottom: "20px", textAlign: "center" }}>
+        <p style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "20px", color: "var(--texte)", marginBottom: "8px" }}>
           {`C'est envoyé.`}
         </p>
-        <p style={{ color: "var(--texte-discret)", fontSize: "13px" }}>
-          Tu peux revenir quand tu veux.
+        <p style={{ color: "var(--texte-discret)", fontSize: "13px", lineHeight: "1.5" }}>
+          {`Vérifie ta boîte mail. Tu peux revenir quand tu veux.`}
         </p>
+      </div>
+    );
+  }
+
+  if (state === "exists") {
+    return (
+      <div style={{ backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(92,26,46,0.12)", borderRadius: "12px", padding: "24px", marginBottom: "20px" }}>
+        <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "16px" }}>
+          <div style={{ width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "16px", fontStyle: "italic" }}>t</span>
+          </div>
+          <p style={{ color: "var(--texte-secondary)", fontSize: "14px", lineHeight: "1.65", fontFamily: "DM Sans, sans-serif", fontStyle: "italic" }}>
+            {`Cet email a déjà un espace. Tu veux te connecter ?`}
+          </p>
+        </div>
+        <button onClick={onLogin}
+          style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "14px 20px", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500, border: "none", width: "100%", cursor: "pointer", marginBottom: "10px" }}>
+          On se connaît déjà →
+        </button>
+        <button onClick={() => setState("idle")}
+          style={{ background: "none", border: "none", color: "var(--texte-discret)", fontSize: "13px", cursor: "pointer", fontFamily: "DM Sans", width: "100%", textAlign: "center" }}>
+          Utiliser un autre email
+        </button>
       </div>
     );
   }
 
   return (
     <div style={{ backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(92,26,46,0.12)", borderRadius: "12px", padding: "20px 22px", marginBottom: "20px" }}>
-      <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "16px" }}>
+      {/* Téfi */}
+      <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "20px" }}>
         <div style={{ width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "16px", fontStyle: "italic" }}>t</span>
         </div>
@@ -73,30 +111,44 @@ function ResumeEmailBlock({ brainDump, priority, actions, onRegister }: {
         </p>
       </div>
 
+      {/* Option A — Créer le compte */}
       <button onClick={onRegister}
-        style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "14px 20px", fontSize: "14px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, border: "none", width: "100%", cursor: "pointer", marginBottom: "10px" }}>
+        style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "15px 20px", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, border: "none", width: "100%", cursor: "pointer" }}>
         Créer mon espace FIRMAMENT →
       </button>
 
-      {!showEmail ? (
-        <button onClick={() => setShowEmail(true)}
-          style={{ background: "none", border: "none", color: "var(--texte-discret)", fontSize: "13px", cursor: "pointer", fontFamily: "DM Sans", width: "100%", textAlign: "center", padding: "6px 0" }}>
-          Recevoir ce résumé par mail
+      {/* Séparateur */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "16px 0" }}>
+        <div style={{ flex: 1, height: "1px", backgroundColor: "rgba(26,18,16,0.08)" }} />
+        <span style={{ color: "var(--texte-discret)", fontSize: "12px", fontFamily: "DM Sans", whiteSpace: "nowrap" }}>ou reçois ce résumé par mail</span>
+        <div style={{ flex: 1, height: "1px", backgroundColor: "rgba(26,18,16,0.08)" }} />
+      </div>
+
+      {/* Option B — Email visible directement */}
+      <form onSubmit={handleSend} style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
+        <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+          placeholder="ton@email.com" required
+          style={{
+            flex: 1, backgroundColor: "transparent", color: "var(--texte)",
+            borderBottom: "1.5px solid var(--texte-discret)",
+            borderTop: "none", borderLeft: "none", borderRight: "none",
+            fontSize: "15px", padding: "10px 4px", fontFamily: "DM Sans",
+            transition: "border-color 0.2s",
+          }}
+          onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }}
+          onBlur={e => { e.target.style.borderBottomColor = "var(--texte-discret)"; }}
+        />
+        <button type="submit" disabled={!email.trim() || sending}
+          style={{
+            backgroundColor: email.trim() && !sending ? "var(--bordeaux)" : "var(--texte-discret)",
+            color: "var(--fond-blanc)", borderRadius: "10px", padding: "10px 16px",
+            fontSize: "13px", fontFamily: "DM Sans", fontWeight: 500,
+            border: "none", cursor: email.trim() && !sending ? "pointer" : "not-allowed",
+            flexShrink: 0,
+          }}>
+          {sending ? "···" : "Envoyer"}
         </button>
-      ) : (
-        <form onSubmit={handleSend} style={{ marginTop: "4px" }}>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-            placeholder="ton@email.com" required autoFocus
-            style={{ width: "100%", backgroundColor: "transparent", color: "var(--texte)", borderBottom: "1.5px solid var(--texte-discret)", borderTop: "none", borderLeft: "none", borderRight: "none", fontSize: "15px", padding: "8px 4px", fontFamily: "DM Sans", marginBottom: "12px" }}
-            onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }}
-            onBlur={e => { e.target.style.borderBottomColor = "var(--texte-discret)"; }}
-          />
-          <button type="submit" disabled={!email.trim() || sending}
-            style={{ backgroundColor: email.trim() && !sending ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "12px 20px", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500, border: "none", width: "100%", cursor: email.trim() && !sending ? "pointer" : "not-allowed" }}>
-            {sending ? "Envoi···" : "Envoyer →"}
-          </button>
-        </form>
-      )}
+      </form>
     </div>
   );
 }
@@ -550,17 +602,21 @@ export default function Firmament() {
             priority={tefiResponse.priority}
             actions={tefiResponse.actions}
             onRegister={() => setScreen("register")}
+            onLogin={() => setScreen("register")}
           />
         )}
 
-        <div style={{ marginBottom: "32px" }}>
-          <button
-            onClick={() => isLoggedIn ? setScreen("chat") : setScreen("register")}
-            style={{ width: "100%", padding: "16px", borderRadius: "12px", backgroundColor: "var(--bordeaux)", border: "none", color: "var(--fond-blanc)", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
-          >
-            Continuer avec Téfi <ArrowRight size={16} />
-          </button>
-        </div>
+        {/* "Continuer avec Téfi" seulement pour les utilisateurs connectés */}
+        {isLoggedIn && (
+          <div style={{ marginBottom: "32px" }}>
+            <button
+              onClick={() => setScreen("chat")}
+              style={{ width: "100%", padding: "16px", borderRadius: "12px", backgroundColor: "var(--bordeaux)", border: "none", color: "var(--fond-blanc)", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+            >
+              Continuer avec Téfi <ArrowRight size={16} />
+            </button>
+          </div>
+        )}
 
         <p style={{ color: "var(--texte-discret)", fontSize: "11px", fontStyle: "italic", textAlign: "center" }}>
           {cosmicLine}
