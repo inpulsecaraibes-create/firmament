@@ -276,7 +276,6 @@ export default function Firmament() {
       <AccueilConnecte
         userName={userName}
         onDump={() => setScreen("braindump")}
-        onRelais={() => { /* Étape D */ }}
         onSetObjectif={() => setScreen("braindump")}
       />
     );

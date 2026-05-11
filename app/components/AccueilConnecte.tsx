@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Brain, Users, AlertCircle, Check } from "lucide-react";
+import { Brain, Users, AlertCircle, Check, BarChart2 } from "lucide-react";
 import ObjectifAimant from "./ObjectifAimant";
 import Thematiques, { Thematique } from "./Thematiques";
+import LePoint from "./LePoint";
+import LeRelais from "./LeRelais";
 import { createClient } from "@/app/lib/supabase/client";
 import { getCosmicLine } from "@/app/lib/cosmic";
 
 interface AccueilConnecteProps {
   userName: string;
   onDump: () => void;
-  onRelais: () => void;
   onSetObjectif: () => void;
 }
 
@@ -24,11 +25,13 @@ interface TopAction {
 
 const cosmicLine = getCosmicLine();
 
-export default function AccueilConnecte({ userName, onDump, onRelais, onSetObjectif }: AccueilConnecteProps) {
+export default function AccueilConnecte({ userName, onDump, onSetObjectif }: AccueilConnecteProps) {
   const [objectif, setObjectif] = useState<{ phrase: string; progress: number } | null>(null);
   const [top3, setTop3] = useState<TopAction[]>([]);
   const [thematiques, setThematiques] = useState<Thematique[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPoint, setShowPoint] = useState(false);
+  const [showRelais, setShowRelais] = useState(false);
   const supabase = createClient();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,6 +114,9 @@ export default function AccueilConnecte({ userName, onDump, onRelais, onSetObjec
     <main style={{ backgroundColor: "var(--fond)", minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
 
       {/* Header */}
+      {showPoint && <LePoint onClose={() => setShowPoint(false)} />}
+      {showRelais && <LeRelais onClose={() => setShowRelais(false)} />}
+
       <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <p style={{ color: "var(--texte-discret)", fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "DM Sans" }}>
@@ -120,9 +126,10 @@ export default function AccueilConnecte({ userName, onDump, onRelais, onSetObjec
             {greeting}{userName ? `, ${userName}` : ""}
           </p>
         </div>
-        <a href="/parametres" style={{ color: "var(--texte-discret)", fontSize: "12px", fontFamily: "DM Sans", textDecoration: "none" }}>
-          ···
-        </a>
+        <button onClick={() => setShowPoint(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", display: "flex", alignItems: "center", gap: "4px" }}>
+          <BarChart2 size={16} />
+          <span style={{ fontSize: "11px", fontFamily: "DM Sans" }}>Le Point</span>
+        </button>
       </div>
 
       {/* Contenu scrollable */}
@@ -231,7 +238,7 @@ export default function AccueilConnecte({ userName, onDump, onRelais, onSetObjec
           Le Dump
         </button>
         <button
-          onClick={onRelais}
+          onClick={() => setShowRelais(true)}
           style={{
             flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
             backgroundColor: "transparent", color: "var(--texte-secondary)",
