@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Brain, Users, BarChart2 } from "lucide-react";
+import { Brain, Users, BarChart2, Clock } from "lucide-react";
 import TextSize from "./TextSize";
 import ObjectifAimant from "./ObjectifAimant";
 import Thematiques, { Thematique } from "./Thematiques";
@@ -30,6 +30,7 @@ export default function AccueilConnecte({ userName, emailVerified = true, onDump
   const [loading, setLoading] = useState(true);
   const [showPoint, setShowPoint] = useState(false);
   const [showRelais, setShowRelais] = useState(false);
+  const [daysLeft, setDaysLeft] = useState<number | null>(null);
   const supabase = createClient();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -38,6 +39,13 @@ export default function AccueilConnecte({ userName, emailVerified = true, onDump
   async function loadData() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    // Jours restants d'accès gratuit
+    const { data: prof } = await supabase.from("profiles").select("trial_ends_at").eq("id", user.id).single();
+    if (prof?.trial_ends_at) {
+      const days = Math.ceil((new Date(prof.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      setDaysLeft(days);
+    }
 
     // Charger l'objectif actif
     const { data: obj } = await supabase
@@ -154,10 +162,17 @@ export default function AccueilConnecte({ userName, emailVerified = true, onDump
             <a href="/decisions" style={{ color: "var(--texte-discret)", fontSize: "11px", fontFamily: "DM Sans", textDecoration: "none", display: "flex", alignItems: "center", gap: "3px" }}>
               <span>⚖</span> Décisions
             </a>
-            <button onClick={() => setShowPoint(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", display: "flex", alignItems: "center", gap: "4px" }}>
-              <BarChart2 size={14} />
-              <span style={{ fontSize: "11px", fontFamily: "DM Sans" }}>Le Point</span>
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {daysLeft !== null && daysLeft <= 10 && daysLeft > 0 && (
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: daysLeft <= 5 ? "var(--bordeaux)" : "var(--or)", fontFamily: "DM Sans" }}>
+                  <Clock size={11} /> {daysLeft}j
+                </span>
+              )}
+              <button onClick={() => setShowPoint(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", display: "flex", alignItems: "center", gap: "4px" }}>
+                <BarChart2 size={14} />
+                <span style={{ fontSize: "11px", fontFamily: "DM Sans" }}>Le Point</span>
+              </button>
+            </div>
             <a href="/parametres" style={{ color: "var(--texte-discret)", fontSize: "11px", fontFamily: "DM Sans", textDecoration: "none" }}>
               ⚙
             </a>
@@ -227,42 +242,41 @@ export default function AccueilConnecte({ userName, emailVerified = true, onDump
             onToggleAction={toggleAction}
             onToggleUrgent={toggleUrgent}
           />
+
+          {/* Téfi disponible */}
+          <button
+            onClick={onDump}
+            style={{
+              display: "block", width: "100%", background: "none", border: "none",
+              cursor: "pointer", padding: "16px 0",
+              color: "var(--texte-discret)", fontSize: "13px",
+              fontFamily: "Cormorant Garamond, serif", fontStyle: "italic",
+              textAlign: "center",
+            }}
+          >
+            Téfi est disponible si tu veux parler.
+          </button>
         </div>
       </div>
 
-      {/* Barre du bas — Le Dump + Le Relais */}
+      {/* Barre du bas fixe */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
         backgroundColor: "var(--fond-blanc)",
         borderTop: "1px solid rgba(26,18,16,0.08)",
-        padding: "12px 20px 28px",
-        display: "flex", gap: "12px",
+        padding: "8px 16px 20px",
+        display: "flex", gap: "10px",
+        paddingBottom: "calc(8px + env(safe-area-inset-bottom, 8px))",
       }}>
-        <button
-          onClick={onDump}
-          style={{
-            flex: 2, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-            backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)",
-            borderRadius: "12px", padding: "14px 20px", border: "none", cursor: "pointer",
-            fontSize: "14px", fontFamily: "DM Sans, sans-serif", fontWeight: 500,
-          }}
-        >
-          <Brain size={16} />
-          Le Dump
+        <button onClick={onDump} style={{ flex: 2, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "13px 20px", border: "none", cursor: "pointer", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500 }}>
+          <Brain size={16} /> Le Dump
         </button>
-        <button
-          onClick={() => setShowRelais(true)}
-          style={{
-            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-            backgroundColor: "transparent", color: "var(--texte-secondary)",
-            borderRadius: "12px", padding: "14px 16px",
-            border: "1.5px solid rgba(26,18,16,0.1)", cursor: "pointer",
-            fontSize: "14px", fontFamily: "DM Sans, sans-serif", fontWeight: 500,
-          }}
-        >
-          <Users size={16} />
-          Le Relais
+        <button onClick={() => setShowRelais(true)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", backgroundColor: "transparent", color: "var(--texte-secondary)", borderRadius: "12px", padding: "13px 12px", border: "1.5px solid rgba(26,18,16,0.1)", cursor: "pointer", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500 }}>
+          <Users size={16} /> Le Relais
         </button>
+        <a href="/parametres" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "12px", border: "1.5px solid rgba(26,18,16,0.1)", color: "var(--texte-discret)", textDecoration: "none", fontSize: "18px", flexShrink: 0 }}>
+          ⚙
+        </a>
       </div>
 
       {/* Ligne cosmique au-dessus de la nav */}
