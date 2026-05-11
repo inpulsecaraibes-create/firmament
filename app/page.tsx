@@ -27,6 +27,80 @@ interface ChatMessage {
 
 const cosmicLine = getCosmicLine();
 
+// Composant bloc email résumé (non connecté)
+function ResumeEmailBlock({ brainDump, priority, actions, onRegister }: {
+  brainDump: string; priority: string; actions: string[]; onRegister: () => void;
+}) {
+  const [showEmail, setShowEmail] = useState(false);
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSending(true);
+    await fetch("/api/resume-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, priority, actions, brainDump }),
+    });
+    setSending(false);
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <div style={{ backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(92,26,46,0.12)", borderRadius: "12px", padding: "20px 22px", marginBottom: "20px", textAlign: "center" }}>
+        <p style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "18px", color: "var(--texte)", marginBottom: "6px" }}>
+          {`C'est envoyé.`}
+        </p>
+        <p style={{ color: "var(--texte-discret)", fontSize: "13px" }}>
+          Tu peux revenir quand tu veux.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(92,26,46,0.12)", borderRadius: "12px", padding: "20px 22px", marginBottom: "20px" }}>
+      <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "16px" }}>
+        <div style={{ width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "16px", fontStyle: "italic" }}>t</span>
+        </div>
+        <p style={{ color: "var(--texte-secondary)", fontSize: "14px", lineHeight: "1.65", fontFamily: "DM Sans, sans-serif", fontStyle: "italic" }}>
+          {`Ce début de clarté est précieux. Tu veux le garder ?`}
+        </p>
+      </div>
+
+      <button onClick={onRegister}
+        style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "14px 20px", fontSize: "14px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, border: "none", width: "100%", cursor: "pointer", marginBottom: "10px" }}>
+        Créer mon espace FIRMAMENT →
+      </button>
+
+      {!showEmail ? (
+        <button onClick={() => setShowEmail(true)}
+          style={{ background: "none", border: "none", color: "var(--texte-discret)", fontSize: "13px", cursor: "pointer", fontFamily: "DM Sans", width: "100%", textAlign: "center", padding: "6px 0" }}>
+          Recevoir ce résumé par mail
+        </button>
+      ) : (
+        <form onSubmit={handleSend} style={{ marginTop: "4px" }}>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="ton@email.com" required autoFocus
+            style={{ width: "100%", backgroundColor: "transparent", color: "var(--texte)", borderBottom: "1.5px solid var(--texte-discret)", borderTop: "none", borderLeft: "none", borderRight: "none", fontSize: "15px", padding: "8px 4px", fontFamily: "DM Sans", marginBottom: "12px" }}
+            onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }}
+            onBlur={e => { e.target.style.borderBottomColor = "var(--texte-discret)"; }}
+          />
+          <button type="submit" disabled={!email.trim() || sending}
+            style={{ backgroundColor: email.trim() && !sending ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "12px 20px", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500, border: "none", width: "100%", cursor: email.trim() && !sending ? "pointer" : "not-allowed" }}>
+            {sending ? "Envoi···" : "Envoyer →"}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
 const ETINCELLES = [
   "Je ne sais plus par où commencer…",
   "J'ai un doute sur mon business model",
@@ -296,7 +370,7 @@ export default function Firmament() {
           </button>
         ) : (
           <a href="/auth/login" style={{ position: "absolute", top: "16px", right: "16px", color: "var(--texte-discret)", fontSize: "12px", fontFamily: "DM Sans, sans-serif", textDecoration: "none" }}>
-            Déjà un espace ?
+            On se connaît déjà →
           </a>
         )}
 
@@ -441,7 +515,26 @@ export default function Firmament() {
           <p style={{ color: "var(--texte-discret)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "12px", fontFamily: "DM Sans, sans-serif" }}>
             Actions prioritaires
           </p>
-          <ActionList actions={tefiResponse.actions} />
+          <ActionList
+            actions={tefiResponse.actions}
+            isLoggedIn={isLoggedIn}
+            onRegister={() => setScreen("register")}
+            onActionClick={(title) => {
+              if (isLoggedIn) {
+                const msg = { role: "user" as const, content: JSON.stringify({ action_clicked: title }) };
+                const newMsgs = [...chatMessages, msg];
+                setChatMessages(newMsgs);
+                setScreen("chat");
+                fetch("/api/tefi", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ messages: newMsgs }),
+                }).then(r => r.json()).then(data => {
+                  setChatMessages([...newMsgs, { role: "assistant", content: data.text }]);
+                });
+              }
+            }}
+          />
         </div>
 
         <div style={{ backgroundColor: "var(--fond-or)", borderRadius: "12px", padding: "16px 18px", marginBottom: "28px" }}>
@@ -452,36 +545,20 @@ export default function Firmament() {
 
         {/* Message de Téfi vers l'inscription — seulement si non connecté */}
         {!isLoggedIn && (
-          <div style={{ backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(92,26,46,0.12)", borderRadius: "12px", padding: "20px 22px", marginBottom: "20px" }}>
-            <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "16px" }}>
-              <div style={{ width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "16px", fontStyle: "italic" }}>t</span>
-              </div>
-              <p style={{ color: "var(--texte-secondary)", fontSize: "14px", lineHeight: "1.65", fontFamily: "DM Sans, sans-serif", fontStyle: "italic" }}>
-                {`Ce début de clarté est précieux. Pour que nous puissions continuer et garder cette conversation en sécurité, crée ton espace au sein de FIRMAMENT.`}
-              </p>
-            </div>
-            <button
-              onClick={() => setScreen("register")}
-              style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "14px 20px", fontSize: "14px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, border: "none", width: "100%", cursor: "pointer" }}
-            >
-              Créer mon espace →
-            </button>
-          </div>
+          <ResumeEmailBlock
+            brainDump={brainDump}
+            priority={tefiResponse.priority}
+            actions={tefiResponse.actions}
+            onRegister={() => setScreen("register")}
+          />
         )}
 
-        <div style={{ display: "flex", gap: "12px", marginBottom: "32px" }}>
-          <button
-            onClick={() => { setScreen("braindump"); setBrainDump(""); setTefiResponse(null); }}
-            style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "1.5px solid rgba(92,26,46,0.2)", background: "transparent", color: "var(--bordeaux)", fontSize: "14px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-          >
-            <ArrowLeft size={15} /> Réécrire
-          </button>
+        <div style={{ marginBottom: "32px" }}>
           <button
             onClick={() => isLoggedIn ? setScreen("chat") : setScreen("register")}
-            style={{ flex: 2, padding: "14px", borderRadius: "12px", backgroundColor: "var(--bordeaux)", border: "none", color: "var(--fond-blanc)", fontSize: "14px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+            style={{ width: "100%", padding: "16px", borderRadius: "12px", backgroundColor: "var(--bordeaux)", border: "none", color: "var(--fond-blanc)", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
           >
-            Continuer avec Téfi <ArrowRight size={15} />
+            Continuer avec Téfi <ArrowRight size={16} />
           </button>
         </div>
 
@@ -583,13 +660,13 @@ export default function Firmament() {
 
             <button type="submit" disabled={!regEmail.trim() || !regPassword || regLoading}
               style={{ backgroundColor: regEmail.trim() && regPassword && !regLoading ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "16px 28px", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, border: "none", width: "100%", cursor: regEmail.trim() && regPassword && !regLoading ? "pointer" : "not-allowed", marginBottom: "16px" }}>
-              {regLoading ? "···" : loginMode ? "Se connecter →" : "Créer mon espace →"}
+              {regLoading ? "···" : loginMode ? "On se connaît déjà →" : "Créer mon espace →"}
             </button>
 
             <p style={{ textAlign: "center" }}>
               <button type="button" onClick={() => { setLoginMode(!loginMode); setRegError(""); }}
                 style={{ background: "none", border: "none", color: "var(--texte-discret)", fontSize: "13px", cursor: "pointer", textDecoration: "underline", fontFamily: "DM Sans, sans-serif" }}>
-                {loginMode ? "Créer un nouvel espace" : "J'ai déjà un espace"}
+                {loginMode ? "Créer un nouvel espace" : "On se connaît déjà →"}
               </button>
             </p>
           </form>

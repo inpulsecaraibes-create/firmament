@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Brain, Users, AlertCircle, Check, BarChart2 } from "lucide-react";
+import TextSize from "./TextSize";
 import ObjectifAimant from "./ObjectifAimant";
 import Thematiques, { Thematique } from "./Thematiques";
 import LePoint from "./LePoint";
@@ -126,10 +127,13 @@ export default function AccueilConnecte({ userName, onDump, onSetObjectif }: Acc
             {greeting}{userName ? `, ${userName}` : ""}
           </p>
         </div>
-        <button onClick={() => setShowPoint(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", display: "flex", alignItems: "center", gap: "4px" }}>
-          <BarChart2 size={16} />
-          <span style={{ fontSize: "11px", fontFamily: "DM Sans" }}>Le Point</span>
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <TextSize />
+          <button onClick={() => setShowPoint(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", display: "flex", alignItems: "center", gap: "4px" }}>
+            <BarChart2 size={16} />
+            <span style={{ fontSize: "11px", fontFamily: "DM Sans" }}>Le Point</span>
+          </button>
+        </div>
       </div>
 
       {/* Contenu scrollable */}

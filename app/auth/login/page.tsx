@@ -156,7 +156,7 @@ export default function LoginPage() {
                   marginBottom: "20px",
                 }}
               >
-                {loading ? "Connexion···" : "Se connecter →"}
+                {loading ? "Connexion···" : "On se connaît déjà →"}
               </button>
 
               <p style={{ textAlign: "center" }}>
