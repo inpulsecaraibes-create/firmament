@@ -11,8 +11,10 @@ console.log('[Resend] Key present:', resendKeyExists, '| Prefix:', resendKeyPref
 
 export async function POST(request: Request) {
   try {
-    const { email, priority, actions, brainDump } = await request.json();
-    if (!email || !priority) return NextResponse.json({ error: "données manquantes" }, { status: 400 });
+    const { email, priority, actions, brainDump, tempId } = await request.json();
+    if (!email) return NextResponse.json({ error: "données manquantes" }, { status: 400 });
+    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://frmmnt.fr";
+    const ctaUrl = tempId ? `${APP_URL}/dump?from=email&tempId=${tempId}` : `${APP_URL}/home`;
 
     // Sauvegarder dans leads
     const supabase = createClient();
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
     <p style="color:#3D2E28;font-size:14px;line-height:1.65;margin:0;font-style:italic">"Cette clarté est à toi. Si tu veux aller plus loin, ton espace t'attend."</p>
   </div>
   <div style="text-align:center">
-    <a href="https://frmmnt.fr/home" style="display:inline-block;background:#5C1A2E;color:#F8F5F0;border-radius:12px;padding:14px 28px;font-size:14px;font-weight:500;text-decoration:none">
+    <a href="${ctaUrl}" style="display:inline-block;background:#5C1A2E;color:#F8F5F0;border-radius:12px;padding:14px 28px;font-size:14px;font-weight:500;text-decoration:none">
       Ouvrir FIRMAMENT →
     </a>
   </div>

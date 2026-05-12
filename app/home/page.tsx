@@ -480,7 +480,7 @@ export default function HomePage() {
 
         {/* TÉFI DISPONIBLE */}
         <a href="/dump" style={{ display: "block", textAlign: "center", color: "var(--texte-discret)", fontSize: "13px", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif", padding: "12px 0", textDecoration: "none" }}>
-          Téfi est disponible si tu veux parler.
+          Disponible si tu veux parler.
         </a>
       </div>
 

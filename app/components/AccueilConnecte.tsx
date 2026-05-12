@@ -244,7 +244,7 @@ export default function AccueilConnecte({ userName, emailVerified = true, onDump
               textAlign: "center",
             }}
           >
-            Téfi est disponible si tu veux parler.
+            Disponible si tu veux parler.
           </button>
         </div>
       </div>

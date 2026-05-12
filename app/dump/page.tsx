@@ -9,7 +9,15 @@ import { getCosmicLine } from "@/app/lib/cosmic";
 const cosmicLine = getCosmicLine();
 
 interface Msg { role: "user" | "assistant"; content: string; tasks?: TaskItem[]; }
-interface TaskItem { title: string; subtitle?: string; is_urgent?: boolean; deadline_text?: string; }
+interface TaskItem {
+  title: string;
+  subtitle?: string;
+  subtasks?: string[];
+  is_urgent?: boolean;
+  deadline_text?: string;
+  suggest_block?: boolean;
+  suggested_duration?: number;
+}
 
 function capitalize(s: string) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
@@ -42,6 +50,16 @@ export default function DumpPage() {
   const supabase = createClient();
 
   const loadUser = useCallback(async () => {
+    // Correction 4 : si arrivée depuis email avec tempId → forcer migration
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const emailTempId = params.get("tempId");
+      const fromEmail = params.get("from") === "email";
+      if (fromEmail && emailTempId) {
+        localStorage.setItem("firmament_temp_id", emailTempId);
+      }
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       setUserId(user.id);
@@ -320,7 +338,7 @@ export default function DumpPage() {
               onClick={handleClarify}
               disabled={dump.trim().length < 5 || loading}
               style={{ backgroundColor: dump.trim().length >= 5 && !loading ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "16px", fontSize: "15px", fontFamily: "DM Sans", fontWeight: 500, border: "none", width: "100%", cursor: dump.trim().length >= 5 && !loading ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-              {loading ? "Téfi réfléchit···" : <><span>Clarifier</span><ArrowRight size={16} /></>}
+              {loading ? "···" : <><span>Clarifier</span><ArrowRight size={16} /></>}
             </button>
 
             <p style={{ fontSize: "11px", color: "var(--texte-discret)", fontStyle: "italic", marginTop: "16px", textAlign: "center" }}>
@@ -455,6 +473,92 @@ export default function DumpPage() {
   );
 }
 
+// Deep Work Slot — propose un créneau agenda pour les tâches complexes
+function DeepWorkSlot({ task }: { task: TaskItem }) {
+  const [duration, setDuration] = useState<number | null>(null);
+  const [when, setWhen] = useState("");
+  const [step, setStep] = useState<"duration" | "when" | "ready">("duration");
+
+  function downloadICS() {
+    if (!duration) return;
+    // Parse "demain matin", "jeudi 9h", etc. → approximate date
+    const start = new Date();
+    start.setDate(start.getDate() + 1); // default: demain
+    start.setHours(9, 0, 0, 0);
+    if (when.toLowerCase().includes("après")) start.setHours(14, 0, 0, 0);
+    if (when.toLowerCase().includes("soir")) start.setHours(18, 0, 0, 0);
+    if (when.toLowerCase().includes("lundi")) { start.setDate(start.getDate() + ((1 - start.getDay() + 7) % 7 || 7)); }
+    if (when.toLowerCase().includes("mardi")) { start.setDate(start.getDate() + ((2 - start.getDay() + 7) % 7 || 7)); }
+    if (when.toLowerCase().includes("mercredi")) { start.setDate(start.getDate() + ((3 - start.getDay() + 7) % 7 || 7)); }
+    if (when.toLowerCase().includes("jeudi")) { start.setDate(start.getDate() + ((4 - start.getDay() + 7) % 7 || 7)); }
+
+    const end = new Date(start.getTime() + duration * 60000);
+    const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const subtasksText = task.subtasks?.map((s, i) => `${i + 1}. ${s}`).join("\\n") || "";
+
+    const ics = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//FIRMAMENT//FR",
+      "BEGIN:VEVENT",
+      `UID:${Date.now()}@frmmnt.fr`,
+      `DTSTAMP:${fmt(new Date())}`,
+      `DTSTART:${fmt(start)}`,
+      `DTEND:${fmt(end)}`,
+      `SUMMARY:🎯 ${task.title}`,
+      `DESCRIPTION:${subtasksText}`,
+      "BEGIN:VALARM", "TRIGGER:-PT15M", "ACTION:DISPLAY", "DESCRIPTION:Rappel FIRMAMENT", "END:VALARM",
+      "END:VEVENT", "END:VCALENDAR"
+    ].join("\r\n");
+
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${task.title.replace(/\s+/g, "_").slice(0, 40)}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div style={{ backgroundColor: "var(--fond-or)", borderRadius: "10px", padding: "12px 14px", marginTop: "8px", border: "1px solid rgba(196,164,107,0.2)" }}>
+      {step === "duration" && (
+        <>
+          <p style={{ fontSize: "13px", color: "var(--texte-secondary)", marginBottom: "10px" }}>
+            Ça mérite un vrai créneau. Je te bloque combien de temps ?
+          </p>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            {[[30, "30 min"], [60, "1h"], [120, "2h"], [240, "Demi-journée"]].map(([min, label]) => (
+              <button key={min} onClick={() => { setDuration(Number(min)); setStep("when"); }}
+                style={{ padding: "7px 12px", borderRadius: "20px", border: "1.5px solid rgba(92,26,46,0.2)", backgroundColor: "var(--fond-blanc)", color: "var(--bordeaux)", fontSize: "13px", cursor: "pointer", fontFamily: "DM Sans", fontWeight: 500 }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {step === "when" && (
+        <>
+          <p style={{ fontSize: "13px", color: "var(--texte-secondary)", marginBottom: "10px" }}>
+            {duration}min bloqué. C'est pour quand ?
+          </p>
+          <input value={when} onChange={e => setWhen(e.target.value)} placeholder="demain matin, jeudi 9h, lundi après-midi..."
+            style={{ width: "100%", backgroundColor: "transparent", color: "var(--texte)", borderBottom: "1.5px solid var(--or)", borderTop: "none", borderLeft: "none", borderRight: "none", fontSize: "14px", padding: "6px 4px", fontFamily: "DM Sans", marginBottom: "10px" }}
+            onKeyDown={e => { if (e.key === "Enter" && when.trim()) setStep("ready"); }} />
+          <button onClick={() => when.trim() && setStep("ready")} disabled={!when.trim()}
+            style={{ backgroundColor: when.trim() ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "10px", padding: "8px 16px", border: "none", cursor: "pointer", fontSize: "13px", fontFamily: "DM Sans" }}>
+            Valider
+          </button>
+        </>
+      )}
+      {step === "ready" && (
+        <button onClick={downloadICS}
+          style={{ width: "100%", backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "10px", padding: "12px 16px", border: "none", cursor: "pointer", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          📅 Ajouter à mon agenda →
+        </button>
+      )}
+    </div>
+  );
+}
+
 // Tâches dans les bulles — interactives pour tous (connecté ou non)
 function TaskBubble({ tasks, isLoggedIn, onRebond }: {
   tasks: TaskItem[];
@@ -493,6 +597,8 @@ function TaskBubble({ tasks, isLoggedIn, onRebond }: {
               {t.deadline_text && <p style={{ fontSize: "11px", color: "var(--bordeaux)", marginTop: "2px" }}>⏰ {t.deadline_text}</p>}
             </button>
           </div>
+          {/* Deep Work slot si suggest_block */}
+          {t.suggest_block && !done.has(j) && <DeepWorkSlot task={t} />}
         </div>
       ))}
       {isLoggedIn && (
@@ -512,10 +618,11 @@ function EmailCapture({ brainDump, priority, actions }: { brainDump: string; pri
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
+    const tempId = typeof window !== "undefined" ? localStorage.getItem("firmament_temp_id") : null;
     await fetch("/api/resume-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, priority, actions, brainDump }),
+      body: JSON.stringify({ email, priority, actions, brainDump, tempId }),
     });
     setSent(true);
   }
