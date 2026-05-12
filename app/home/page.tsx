@@ -2,9 +2,101 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Settings, ClipboardList, Bookmark, CheckCircle } from "lucide-react";
+import { Settings, ClipboardList, Bookmark, Check, X } from "lucide-react";
 
 function capitalize(s: string) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+// Composant tâche avec swipe gauche/droit
+function SwipeableTaskRow({ task, isDone, onDone, onUpdate, borderBottom }: {
+  task: Task; isDone: boolean;
+  onDone: () => void;
+  onUpdate: (id: string, u: { is_urgent?: boolean; is_priority?: boolean; is_sleeping?: boolean }) => void;
+  borderBottom: boolean;
+}) {
+  const [swipeX, setSwipeX] = useState(0);
+  const [showPanel, setShowPanel] = useState(false);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const dragging = useRef(false);
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    dragging.current = false;
+  }
+  function onTouchMove(e: React.TouchEvent) {
+    if (!touchStart.current) return;
+    const dx = e.touches[0].clientX - touchStart.current.x;
+    const dy = e.touches[0].clientY - touchStart.current.y;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+      dragging.current = true;
+      setSwipeX(Math.max(-100, Math.min(100, dx)));
+    }
+  }
+  function onTouchEnd() {
+    if (!dragging.current) { touchStart.current = null; return; }
+    if (swipeX < -60) {
+      // Swipe gauche → ouvrir dump pour retravailler
+      window.location.href = `/dump?rework=${encodeURIComponent(task.title)}`;
+    } else if (swipeX > 60) {
+      // Swipe droit → panneau statut
+      setShowPanel(true);
+      if (navigator.vibrate) navigator.vibrate(10);
+    }
+    setSwipeX(0);
+    touchStart.current = null; dragging.current = false;
+  }
+
+  return (
+    <>
+      {showPanel && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "flex-end" }} onClick={() => setShowPanel(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ backgroundColor: "var(--fond-blanc)", borderLeft: "2px solid var(--bordeaux)", borderRadius: "16px 16px 0 0", width: "100%", padding: "20px 20px 40px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--texte)", flex: 1, lineHeight: "1.4", paddingRight: "12px" }}>{task.title}</p>
+              <button onClick={() => setShowPanel(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)" }}><X size={18} /></button>
+            </div>
+            {[
+              { field: "is_urgent" as const, emoji: "⚡", label: "Urgent", desc: "Remonte dans le top 3", value: task.is_urgent, disabled: task.is_sleeping },
+              { field: "is_priority" as const, emoji: "↑", label: "Priorité haute", desc: "Monte d'un cran", value: task.is_priority, disabled: task.is_sleeping },
+              { field: "is_sleeping" as const, emoji: "💤", label: "En sommeil", desc: "Retire de la vue", value: task.is_sleeping, disabled: false },
+            ].map(({ field, emoji, label, desc, value, disabled }) => (
+              <button key={field} disabled={disabled} onClick={() => {
+                if (field === "is_sleeping" && !value) { onUpdate(task.id, { is_sleeping: true, is_urgent: false, is_priority: false }); }
+                else if (field === "is_sleeping" && value) { onUpdate(task.id, { is_sleeping: false }); }
+                else { onUpdate(task.id, { [field]: !value }); }
+              }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "13px 16px", background: "none", border: "1px solid rgba(26,18,16,0.08)", borderRadius: "10px", cursor: disabled ? "not-allowed" : "pointer", marginBottom: "8px", opacity: disabled ? 0.35 : 1, backgroundColor: value && !disabled ? "var(--fond-or)" : "transparent" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "18px" }}>{emoji}</span>
+                  <div style={{ textAlign: "left" }}>
+                    <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--texte)", marginBottom: "1px" }}>{label}</p>
+                    <p style={{ fontSize: "11px", color: "var(--texte-discret)" }}>{desc}</p>
+                  </div>
+                </div>
+                <div style={{ width: "42px", height: "24px", borderRadius: "12px", backgroundColor: value && !disabled ? "var(--bordeaux)" : "rgba(26,18,16,0.12)", position: "relative" }}>
+                  <div style={{ width: "18px", height: "18px", borderRadius: "50%", backgroundColor: "white", position: "absolute", top: "3px", left: value && !disabled ? "21px" : "3px", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.15)" }} />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+        style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "13px 16px", borderBottom: borderBottom ? "1px solid rgba(26,18,16,0.06)" : "none", transform: `translateX(${swipeX}px)`, transition: swipeX === 0 ? "transform 0.2s" : "none", backgroundColor: isDone ? "rgba(27,58,45,0.04)" : "transparent" }}>
+        <button onClick={onDone}
+          style={{ width: "22px", height: "22px", borderRadius: "50%", border: `1.5px solid ${isDone ? "var(--vert)" : "rgba(92,26,46,0.25)"}`, backgroundColor: isDone ? "var(--vert)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer", marginTop: "1px", transition: "all 0.3s" }}>
+          {isDone && <Check size={12} color="white" strokeWidth={3} />}
+        </button>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: "14px", color: isDone ? "var(--texte-discret)" : "var(--texte)", lineHeight: "1.4", textDecoration: isDone ? "line-through" : "none", transition: "all 0.2s" }}>{task.title}</p>
+          {task.subtitle && <p style={{ fontSize: "12px", color: "var(--texte-discret)", marginTop: "2px" }}>{task.subtitle}</p>}
+          {task.deadline_text && <p style={{ fontSize: "11px", color: "var(--bordeaux)", marginTop: "2px" }}>⏰ {task.deadline_text}</p>}
+        </div>
+        {task.is_urgent && !isDone && <span style={{ backgroundColor: "rgba(92,26,46,0.08)", color: "var(--bordeaux)", fontSize: "10px", fontWeight: 600, padding: "2px 6px", borderRadius: "8px", flexShrink: 0 }}>!</span>}
+        {task.is_priority && !task.is_urgent && !isDone && <span style={{ backgroundColor: "rgba(140,109,63,0.1)", color: "var(--or)", fontSize: "10px", padding: "2px 5px", borderRadius: "6px", flexShrink: 0 }}>↑</span>}
+      </div>
+    </>
+  );
+}
 import { createClient } from "@/app/lib/supabase/client";
 import { getCosmicLine } from "@/app/lib/cosmic";
 
@@ -97,11 +189,25 @@ export default function HomePage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Animation : barrer → rester 3s → disparaître
+  const [doneAnimating, setDoneAnimating] = useState<Set<string>>(new Set());
+
   async function toggleTask(id: string) {
-    setTasks(prev => prev.filter(t => t.id !== id));
+    setDoneAnimating(prev => { const n = new Set(prev); n.add(id); return n; });
     await supabase.from("tasks").update({ status: "done" }).eq("id", id);
-    // Vibration subtile
     if (navigator.vibrate) navigator.vibrate([5, 30, 5]);
+    setTimeout(() => {
+      setTasks(prev => prev.filter(t => t.id !== id));
+      setDoneAnimating(prev => { const n = new Set(prev); n.delete(id); return n; });
+    }, 3000);
+  }
+
+  // Mise à jour urgence/priorité/sommeil depuis le panneau swipe
+  async function updateTaskStatus(id: string, updates: { is_urgent?: boolean; is_priority?: boolean; is_sleeping?: boolean }) {
+    await supabase.from("tasks").update(updates).eq("id", id);
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    if (updates.is_sleeping) setTasks(prev => prev.filter(t => t.id !== id));
+    if (navigator.vibrate) navigator.vibrate(10);
   }
 
   function toggleTheme(id: string) {
@@ -183,18 +289,9 @@ export default function HomePage() {
             </p>
           ) : (
             <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", border: "1px solid rgba(26,18,16,0.07)", overflow: "hidden" }}>
+              <p style={{ fontSize: "10px", color: "var(--texte-discret)", padding: "6px 16px 0", fontStyle: "italic" }}>← glisse pour modifier · → pour les options</p>
               {tasks.map((task, i) => (
-                <div key={task.id} style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "13px 16px", borderBottom: i < tasks.length - 1 ? "1px solid rgba(26,18,16,0.06)" : "none" }}>
-                  <button onClick={() => toggleTask(task.id)} style={{ width: "22px", height: "22px", borderRadius: "50%", border: "1.5px solid rgba(92,26,46,0.25)", backgroundColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer", marginTop: "1px", transition: "all 0.15s" }}>
-                    <CheckCircle size={14} color="transparent" />
-                  </button>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: "14px", color: "var(--texte)", lineHeight: "1.4", fontWeight: 400 }}>{task.title}</p>
-                    {task.subtitle && <p style={{ fontSize: "12px", color: "var(--texte-discret)", marginTop: "2px" }}>{task.subtitle}</p>}
-                    {task.deadline_text && <p style={{ fontSize: "11px", color: "var(--bordeaux)", marginTop: "2px" }}>⏰ {task.deadline_text}</p>}
-                  </div>
-                  {task.is_urgent && <span style={{ backgroundColor: "rgba(92,26,46,0.08)", color: "var(--bordeaux)", fontSize: "10px", fontWeight: 600, padding: "2px 6px", borderRadius: "8px", flexShrink: 0 }}>!</span>}
-                </div>
+                <SwipeableTaskRow key={task.id} task={task} isDone={doneAnimating.has(task.id)} onDone={() => toggleTask(task.id)} onUpdate={updateTaskStatus} borderBottom={i < tasks.length - 1} />
               ))}
             </div>
           )}

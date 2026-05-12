@@ -181,6 +181,16 @@ export async function POST(request: Request) {
   try {
     const { brainDump, messages, userId } = await request.json();
 
+    // Vérification sécurité — mots sensibles AVANT tout traitement
+    const textToCheck = brainDump || messages?.map((m: { content: string }) => m.content).join(" ") || "";
+    const dangerousWords = ["suicide", "me tuer", "me suicider", "mourir", "mettre fin à ma vie", "en finir", "automutilation", "me faire du mal", "me blesser", "plus envie de vivre"];
+    if (dangerousWords.some(w => textToCheck.toLowerCase().includes(w))) {
+      return NextResponse.json({
+        type: "safety",
+        text: "Ce que tu traverses semble très lourd. Le 3114 est disponible 24h/24, y compris en Martinique et dans tous les territoires d'outre-mer. Tu n'as pas à traverser ça seul.",
+      });
+    }
+
     // Contexte utilisateur enrichi depuis Supabase
     let ctx: UserContext = {};
     if (userId) {
@@ -189,11 +199,17 @@ export async function POST(request: Request) {
         supabase.from("profiles").select("prenom,entreprise,anciennete,etat_moment,objectif_aimant").eq("id", userId).single(),
         supabase.from("tasks").select("*", { count: "exact", head: true }).eq("user_id", userId).eq("status", "active"),
         supabase.from("patterns").select("keyword,count").eq("user_id", userId).eq("resolved", false).order("count", { ascending: false }).limit(5),
-        supabase.from("conversations").select("content").eq("user_id", userId).eq("role", "user").order("created_at", { ascending: false }).limit(10),
+        // Mémoire longue : 30 derniers jours de conversations
+        supabase.from("conversations").select("content,role,created_at").eq("user_id", userId).eq("role", "user").order("created_at", { ascending: false }).limit(30),
       ]);
 
-      // Résumé des conversations récentes
-      const recentSummary = recentConvs?.slice(0, 5).map(c => c.content.slice(0, 100)).join(" | ") || "";
+      // Résumé mémoire longue — les 30 derniers jours
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const longMemory = recentConvs
+        ?.filter(c => new Date(c.created_at) > thirtyDaysAgo)
+        .slice(0, 10)
+        .map(c => c.content.slice(0, 120))
+        .join(" | ") || "";
 
       // Détecter multi-projets depuis le profil et les thèmes
       const { data: themes } = await supabase.from("themes").select("title").eq("user_id", userId).order("position").limit(10);
@@ -208,7 +224,7 @@ export async function POST(request: Request) {
           objectif: profile.objectif_aimant,
           activeTasks: activeTasks || 0,
           patterns: patterns || [],
-          recentConvSummary: recentSummary,
+          recentConvSummary: longMemory,
           multiProjects,
         };
       }

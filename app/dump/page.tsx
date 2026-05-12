@@ -24,6 +24,7 @@ export default function DumpPage() {
   const [prenom, setPrenom] = useState<string>("");
   const [listening, setListening] = useState(false);
   const [etincelles, setEtincelles] = useState<string[]>([]);
+  const [, setPointMode] = useState(false); // Le Point intégré
   // tempId pour tracking non-connecté
   useState<string>(() => {
     if (typeof window === "undefined") return "";
@@ -58,6 +59,21 @@ export default function DumpPage() {
       if (suggestions.length < 3) suggestions.push("J'ai plusieurs choses en cours que je n'avance pas");
 
       setEtincelles(suggestions.slice(0, 3));
+
+      // Vérifier si Le Point doit s'ouvrir (7 jours depuis inscription ou dernier point)
+      const { data: profile } = await supabase.from("profiles").select("created_at").eq("id", user.id).single();
+      const { data: lastPoint } = await supabase.from("points").select("created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).single();
+      const ref = lastPoint?.created_at || profile?.created_at;
+      if (ref) {
+        const daysSince = Math.floor((Date.now() - new Date(ref).getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSince >= 7) {
+          setPointMode(true);
+          // Pré-charger Le Point avec la première question de Téfi
+          const pointMsg: Msg = { role: "assistant", content: "Ça fait une semaine. Avant qu'on parle de la suite, dis-moi : qu'est-ce que tu as accompli ?" };
+          setMessages([pointMsg]);
+          setScreen("chat");
+        }
+      }
     } else {
       // Étincelles génériques pour non-connectés
       setEtincelles([
