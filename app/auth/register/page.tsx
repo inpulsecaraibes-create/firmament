@@ -55,17 +55,20 @@ export default function RegisterPage() {
         trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       });
 
-      // Migrer les tâches temp (localStorage)
+      // Bug A fix : migration via API (service role bypass RLS timing issue)
       const uid = data.user?.id;
       if (uid) {
         const pending = JSON.parse(localStorage.getItem("firmament_pending_tasks") || "[]");
-        for (const { theme, tasks } of pending) {
-          const { data: th } = await supabase.from("themes").insert({ user_id: uid, title: theme }).select().single();
-          if (th && tasks?.length) {
-            await supabase.from("tasks").insert(tasks.map((t: { title: string; subtitle?: string; is_urgent?: boolean }, i: number) => ({ user_id: uid, theme_id: th.id, title: t.title, subtitle: t.subtitle, is_urgent: t.is_urgent || false, position: i })));
-          }
+        if (pending.length > 0) {
+          try {
+            const res = await fetch("/api/migrate-tasks", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ userId: uid, pendingTasks: pending }),
+            });
+            if (res.ok) localStorage.removeItem("firmament_pending_tasks");
+          } catch (e) { console.error("Migration failed:", e); }
         }
-        localStorage.removeItem("firmament_pending_tasks");
       }
 
       // Parrainage

@@ -1,8 +1,10 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Settings, ClipboardList, Bookmark, CheckCircle } from "lucide-react";
+
+function capitalize(s: string) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 import { createClient } from "@/app/lib/supabase/client";
 import { getCosmicLine } from "@/app/lib/cosmic";
 
@@ -51,6 +53,8 @@ export default function HomePage() {
   const [showPhrase, setShowPhrase] = useState(false);
   const [openThemes, setOpenThemes] = useState<Set<string>>(new Set());
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
+  const [tefiGreeting, setTefiGreeting] = useState<string>("");
+  const greetingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const supabase = createClient();
 
   const load = useCallback(async () => {
@@ -64,6 +68,21 @@ export default function HomePage() {
       if (p.trial_ends_at) {
         const d = Math.ceil((new Date(p.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
         setDaysLeft(d);
+      }
+
+      // Bulle d'accueil Téfi — première ouverture de la journée
+      const todayKey = `firmament_last_visit_${user.id}`;
+      const lastVisit = localStorage.getItem(todayKey);
+      const today = new Date().toISOString().split("T")[0];
+      if (lastVisit !== today) {
+        localStorage.setItem(todayKey, today);
+        // Vérifier s'il y avait des priorités hier
+        const { data: yesterdayTasks } = await supabase.from("tasks").select("title").eq("user_id", user.id).eq("status", "active").eq("is_priority", true).limit(1);
+        const nom = capitalize(p.prenom || "");
+        if (yesterdayTasks && yesterdayTasks.length > 0) {
+          setTefiGreeting(`Bonjour${nom ? " " + nom : ""}. Tu avais "${yesterdayTasks[0].title}" comme priorité hier. Ça s'est passé comment ?`);
+          greetingTimerRef.current = setTimeout(() => setTefiGreeting(""), 7000);
+        }
       }
     }
 
@@ -115,7 +134,7 @@ export default function HomePage() {
         <div>
           <p style={{ color: "var(--texte-discret)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>FIRMAMENT</p>
           <p style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "20px", fontWeight: 300, color: "var(--texte)", marginTop: "2px" }}>
-            {greeting}{profile?.prenom ? `, ${profile.prenom}` : ""}
+            {greeting}{profile?.prenom ? `, ${capitalize(profile.prenom)}` : ""}
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
@@ -127,6 +146,17 @@ export default function HomePage() {
           <a href="/parametres" title="Paramètres" style={{ color: "var(--texte-discret)", textDecoration: "none" }}><Settings size={16} /></a>
         </div>
       </div>
+
+      {/* Bulle d'accueil Téfi */}
+      {tefiGreeting && (
+        <a href="/dump" style={{ display: "flex", gap: "10px", alignItems: "flex-start", padding: "12px 20px", backgroundColor: "var(--fond-or)", textDecoration: "none", cursor: "pointer", borderBottom: "1px solid rgba(26,18,16,0.06)" }}
+          onClick={() => { if (greetingTimerRef.current) clearTimeout(greetingTimerRef.current); setTefiGreeting(""); }}>
+          <div style={{ width: "26px", height: "26px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "14px", fontStyle: "italic" }}>t</span>
+          </div>
+          <p style={{ fontSize: "14px", color: "var(--texte-secondary)", lineHeight: "1.5", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif" }}>{tefiGreeting}</p>
+        </a>
+      )}
 
       <div style={{ padding: "20px 20px 0", overflowY: "auto" }}>
 
