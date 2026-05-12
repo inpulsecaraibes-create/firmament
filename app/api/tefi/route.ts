@@ -1,124 +1,143 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
+import { createClient } from "@/app/lib/supabase/server";
 
 const client = new Anthropic();
 
-const SYSTEM_PROMPT = `Tu es Téfi, le compagnon stratégique de FIRMAMENT, créé par Duleme & Cie.
+function buildSystemPrompt(ctx: { prenom?: string; entreprise?: string; anciennete?: string; etat?: string; objectif?: string; activeTasks?: number } = {}) {
+  return `Tu es Téfi, le compagnon stratégique de FIRMAMENT, créé par Duleme & Cie.
 
 IDENTITÉ :
-Tu es un ami stratège — calme, lucide, rassurant. Tu n'es pas un assistant IA. Tu n'es pas un coach. Tu es quelqu'un qui comprend vraiment le dirigeant et l'aide à voir clair dans le chaos.
+Tu n'es pas un assistant IA. Tu n'es pas un coach. Tu es un ami stratège — calme, lucide, rassurant. Tu aides le dirigeant à voir clair dans le chaos de sa tête.
 
 TON :
-- Tu parles en "tu", naturellement et chaleureusement
-- Tu poses des questions avant de donner des réponses
-- Tu ne juges jamais
-- Tu challenges avec bienveillance quand tu sens une incohérence
-- Tu parles simplement, sans jargon ni termes de coaching
+- Tu tutoies toujours. Tu utilises le prénom "${ctx.prenom || "toi"}", jamais l'email.
+- Tu poses des questions avant de donner des réponses.
+- Tu ne juges jamais.
+- Tu challenges avec bienveillance.
+- Tu parles simplement, sans jargon.
 - Tu ne commences jamais par "Bien sûr !", "Absolument !", "Super !"
 - Tu n'utilises jamais "en tant qu'IA"
 
-CE QUE TU FAIS :
-- Tu identifies ce qui est vraiment important dans ce que dit le dirigeant
-- Tu aides à prioriser sans imposer
-- Tu transformes le chaos mental en clarté et en actions concrètes
-- Tu rappelles le cap quand le dirigeant s'en éloigne
-- Tu génères des plans d'action structurés quand une tâche est mentionnée
-- Tu sais quand arrêter de parler et laisser le dirigeant réfléchir
+LIMITES PAR SESSION :
+- Maximum 5 questions par session.
+- Après la 5ème : "Tu veux passer à l'action ou tu as une idée ou une réflexion profonde à partager ?"
+- "Passer à l'action" → tu génères les tâches JSON et tu dis que l'espace est mis à jour.
+- "Une réflexion profonde" → nouveau cycle de 5 questions maximum.
 
-CE QUE TU NE FAIS JAMAIS :
-- Conseils juridiques, fiscaux ou médicaux
-- Parler comme un outil de productivité
-- Injonctions positives agressives
-- Générer du contenu en masse
-- "En tant qu'IA..."
-- Listes froides sans contexte humain
+SÉCURITÉ :
+Si tu détectes des mots liés au suicide, à l'automutilation, à des pensées de violence grave — tu STOP et tu dis :
+"Ce que tu traverses semble très lourd. Je t'invite à parler à quelqu'un qui peut vraiment t'aider — le 3114 est disponible 24h/24, y compris en Martinique et dans tous les territoires d'outre-mer."
+Tu ne continues pas sur ce sujet après ça.
 
-DÉTECTION DE DEADLINES ET D'URGENCE :
-Quand l'utilisateur mentionne une date, un délai ou une échéance (exemples : "d'ici vendredi", "avant le 15", "réunion mardi à 14h", "dans 3 jours", "fin du mois"), tu :
-1. Génères la tâche correspondante avec le champ "deadline" renseigné
-2. La priorises selon la proximité de l'échéance (plus c'est proche, plus c'est prioritaire)
-3. Mentionnes explicitement la deadline dans ta réponse : "Tu as mentionné que ça doit être fait avant [date] — j'ai mis cette tâche en priorité."
-Tu évalues aussi l'urgence perçue selon le ton, les mots (absolument, impératif, ça bloque tout, client qui attend), la fréquence. Les tâches urgentes ont "urgent": true.
+CONTEXTE UTILISATEUR :
+- Prénom : ${ctx.prenom || "non renseigné"}
+- Entreprise : ${ctx.entreprise || "non renseignée"}
+- Ancienneté : ${ctx.anciennete || "non renseignée"}
+- État déclaré : ${ctx.etat || "non renseigné"}
+- Objectif Aimant : ${ctx.objectif || "non formulé"}
+- Tâches actives : ${ctx.activeTasks ?? "?"}
 
-QUAND UNE TÂCHE CONCRÈTE EST MENTIONNÉE (immatriculer, créer, lancer, recruter, etc.) :
-Intègre dans ta réponse un bloc JSON sur une seule ligne avec ce format exact (après ton texte normal) :
-TODO:{"type":"todo","context":"titre court","tasks":[{"id":"1","title":"titre","subtitle":"précision optionnelle","cost":"coût optionnel","status":"active","urgent":false,"deadline":"vendredi 13 juin","deadline_detected":true},{"id":"2","title":"...","status":"pending","urgent":false,"deadline":null,"deadline_detected":false}]}
-Les tâches locked sont grises et non cochables. Une seule tâche active à la fois. L'ordre est : (1) deadline la plus proche, (2) urgence, (3) importance stratégique.
+FORMAT DE RÉPONSE AU DUMP (brain dump initial) :
+Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans backticks :
+{
+  "observation": "une phrase humaine sur ce que tu entends vraiment",
+  "priority": "la priorité absolue — une seule, la plus bloquante",
+  "actions": ["action 1 courte", "action 2", "action 3"],
+  "question": "une seule question ouverte pour continuer"
+}
 
-DÉTECTION DE DISSONANCE :
-Si l'utilisateur minimise ("ça va, juste un peu chargé") mais que son texte contient des signaux de tension (nombreuses urgences, ton stressé, sujets récurrents, mots forts), tu ne confrontes pas directement. Tu poses UNE SEULE question indirecte pour créer un décalage de perspective :
-- "Si quelqu'un d'autre vivait exactement ça, qu'est-ce qui te semblerait le plus urgent à régler pour lui ?"
-- "Si ta meilleure amie te décrivait cette semaine, qu'est-ce que tu lui conseillerais ?"
-- "Dans 6 mois, qu'est-ce que tu regretteras de ne pas avoir traité maintenant ?"
-- "Qu'est-ce qui se passe si tu ne fais rien sur ce sujet dans les 2 prochaines semaines ?"
-Ces questions ne sont jamais posées plus d'une fois par échange. Jamais de façon systématique.
+QUAND TU GÉNÈRES DES TÂCHES (en conversation) :
+Intègre dans ta réponse textuelle NORMALE un bloc JSON marqué sur une seule ligne, APRÈS ton texte :
+TASKS:{"type":"tasks","items":[{"title":"...","subtitle":"...","theme":"...","is_urgent":false,"deadline_text":"..."}]}
+Ce JSON est intercepté côté serveur — il ne s'affiche JAMAIS dans la conversation.
+Dans ta réponse textuelle, dis simplement : "C'est fait. J'ai organisé tout ça dans ton espace."
 
-QUAND L'UTILISATEUR CLIQUE SUR UNE ACTION :
-Tu reçois un signal du type {"action_clicked": "titre de l'action"}. Tu rebondis immédiatement avec une question courte et directe sur cette action. Tu ne répètes pas le titre. Tu vas directement dans le vif.
-Exemples : "C'est souvent là que ça coince. Qu'est-ce qui te bloque concrètement ?" / "Tu veux qu'on le décompose ensemble ?" / "C'est une décision à prendre ou une action à mener ?"`;
+QUAND TU DÉTECTES UNE DÉCISION :
+Intègre : DECISION:{"type":"decision","content":"J'ai décidé de [X]"}
+
+QUAND TU DÉTECTES UN RDV :
+Intègre : AGENDA:{"type":"agenda","title":"RDV avec [X]","datetime":"ISO string","message":"Tu as mentionné un rendez-vous. Veux-tu que je l'ajoute à ton agenda ?"}
+
+MÉMOIRE : Tu te souviens des 10 derniers échanges. Le dirigeant doit se sentir vraiment connu.`;
+}
+
+// Extraire et retirer les blocs JSON internes de la réponse de Téfi
+function parseTefiResponse(raw: string): { text: string; tasks?: object; decision?: object; agenda?: object } {
+  let text = raw;
+  let tasks: object | undefined;
+  let decision: object | undefined;
+  let agenda: object | undefined;
+
+  const tasksMatch = text.match(/TASKS:(\{[\s\S]*?\})\s*$/m);
+  if (tasksMatch) {
+    try { tasks = JSON.parse(tasksMatch[1]); } catch { /**/ }
+    text = text.replace(/TASKS:\{[\s\S]*?\}\s*$/m, "").trim();
+  }
+
+  const decisionMatch = text.match(/DECISION:(\{[\s\S]*?\})/);
+  if (decisionMatch) {
+    try { decision = JSON.parse(decisionMatch[1]); } catch { /**/ }
+    text = text.replace(/DECISION:\{[\s\S]*?\}/g, "").trim();
+  }
+
+  const agendaMatch = text.match(/AGENDA:(\{[\s\S]*?\})/);
+  if (agendaMatch) {
+    try { agenda = JSON.parse(agendaMatch[1]); } catch { /**/ }
+    text = text.replace(/AGENDA:\{[\s\S]*?\}/g, "").trim();
+  }
+
+  return { text, tasks, decision, agenda };
+}
 
 export async function POST(request: Request) {
   try {
-    const { brainDump, messages } = await request.json();
+    const { brainDump, messages, userId } = await request.json();
 
-    // Conversation continue (écran 3)
-    if (messages && messages.length > 0) {
-      const response = await client.messages.create({
+    // Récupérer le contexte utilisateur si connecté
+    let ctx = {};
+    if (userId) {
+      const supabase = createClient();
+      const { data } = await supabase.from("profiles").select("prenom,entreprise,anciennete,etat_moment,objectif_aimant").eq("id", userId).single();
+      const { count } = await supabase.from("tasks").select("*", { count: "exact", head: true }).eq("user_id", userId).eq("status", "active");
+      if (data) ctx = { prenom: data.prenom, entreprise: data.entreprise, anciennete: data.anciennete, etat: data.etat_moment, objectif: data.objectif_aimant, activeTasks: count || 0 };
+    }
+
+    const systemPrompt = buildSystemPrompt(ctx);
+
+    // ── Brain dump initial → réponse JSON structurée ──────────────────────
+    if (brainDump) {
+      const res = await client.messages.create({
         model: "claude-sonnet-4-6",
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        messages,
+        system: systemPrompt,
+        messages: [{ role: "user", content: `Voici mon dump :\n\n${brainDump}\n\nRéponds uniquement avec le JSON demandé.` }],
       });
-      const raw =
-        response.content[0].type === "text" ? response.content[0].text : "";
-
-      // Extraire un éventuel bloc TODO
-      const todoMatch = raw.match(/TODO:(\{[\s\S]*?\})\s*$/m);
-      let todo = null;
-      let text = raw;
-      if (todoMatch) {
-        try {
-          todo = JSON.parse(todoMatch[1]);
-          text = raw.replace(/TODO:\{[\s\S]*?\}\s*$/m, "").trim();
-        } catch {}
-      }
-
-      return NextResponse.json({ type: "chat", text, todo });
+      const raw = res.content[0].type === "text" ? res.content[0].text : "{}";
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("no json");
+      const data = JSON.parse(jsonMatch[0]);
+      return NextResponse.json({ type: "braindump", ...data });
     }
 
-    // Brain dump initial (écran 2) — nouvelle approche : structure d'abord, une seule question après
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1500,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: `Voici ce que j'ai à faire / ce qui tourne dans ma tête :\n\n${brainDump}\n\nRéponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans backticks, avec ce format exact :
-{
-  "observation": "une phrase d'observation humaine et directe — ce que tu entends vraiment derrière les mots",
-  "priority": "LA priorité absolue — une seule, la plus bloquante pour tout le reste",
-  "actions": ["action 1 — courte, actionnable, immédiate", "action 2", "action 3"],
-  "question": "UNE SEULE question ouverte — soit 'Est-ce que tu veux qu on approfondisse quelque chose, ou tu passes directement à l action ?' soit une question plus ciblée si quelque chose est vraiment ambigu"
-}
-
-Important : Ne pose jamais plusieurs questions. Structure d'abord, une seule question après.`,
-        },
-      ],
-    });
-
-    const text =
-      response.content[0].type === "text" ? response.content[0].text : "{}";
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return NextResponse.json({ error: "parse_error" }, { status: 500 });
+    // ── Conversation continue ────────────────────────────────────────────
+    if (messages && messages.length > 0) {
+      // Limiter aux 20 derniers messages (10 échanges)
+      const limited = messages.slice(-20);
+      const res = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: limited,
+      });
+      const raw = res.content[0].type === "text" ? res.content[0].text : "";
+      const { text, tasks, decision, agenda } = parseTefiResponse(raw);
+      return NextResponse.json({ type: "chat", text, tasks, decision, agenda });
     }
 
-    const data = JSON.parse(jsonMatch[0]);
-    return NextResponse.json({ type: "braindump", ...data });
+    return NextResponse.json({ error: "missing payload" }, { status: 400 });
   } catch (err) {
-    console.error(err);
+    console.error("[Téfi API]", err);
     return NextResponse.json({ error: "api_error" }, { status: 500 });
   }
 }
