@@ -79,6 +79,13 @@ export default function RegisterPage() {
         }
       }
 
+      // Email de bienvenue (non bloquant)
+      fetch("/api/welcome-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email.trim().toLowerCase(), prenom: form.prenom.trim() }),
+      }).catch(() => {}); // Non bloquant
+
       window.location.href = "/auth/onboarding";
     } catch { setError("Une erreur inattendue est survenue."); setLoading(false); }
   }

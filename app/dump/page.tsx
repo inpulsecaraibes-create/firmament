@@ -23,6 +23,7 @@ export default function DumpPage() {
   const [userId, setUserId] = useState<string>("");
   const [prenom, setPrenom] = useState<string>("");
   const [listening, setListening] = useState(false);
+  const [etincelles, setEtincelles] = useState<string[]>([]);
   // tempId pour tracking non-connecté
   useState<string>(() => {
     if (typeof window === "undefined") return "";
@@ -41,8 +42,29 @@ export default function DumpPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       setUserId(user.id);
-      const { data: p } = await supabase.from("profiles").select("prenom").eq("id", user.id).single();
+      const { data: p } = await supabase.from("profiles").select("prenom,entreprise,etat_moment").eq("id", user.id).single();
       if (p?.prenom) setPrenom(capitalize(p.prenom));
+
+      // Étincelles contextuelles basées sur le profil et les patterns
+      const { data: patterns } = await supabase.from("patterns").select("keyword").eq("user_id", user.id).eq("resolved", false).order("count", { ascending: false }).limit(3);
+      const { data: pendingTasks } = await supabase.from("tasks").select("title").eq("user_id", user.id).eq("status", "active").limit(3);
+
+      const suggestions: string[] = [];
+      if (patterns?.length) suggestions.push(`Revenir sur "${patterns[0].keyword}"`);
+      if (pendingTasks?.length) suggestions.push(`Avancer sur : ${pendingTasks[0].title.slice(0, 40)}`);
+      if (p?.etat_moment === "surcharge") suggestions.push("Je suis surchargé, aide-moi à trier");
+      else if (p?.etat_moment === "flou") suggestions.push("J'ai besoin de clarté sur ma direction");
+      else suggestions.push("Je ne sais plus par où commencer");
+      if (suggestions.length < 3) suggestions.push("J'ai plusieurs choses en cours que je n'avance pas");
+
+      setEtincelles(suggestions.slice(0, 3));
+    } else {
+      // Étincelles génériques pour non-connectés
+      setEtincelles([
+        "Je ne sais plus par où commencer…",
+        "J'ai plusieurs projets en cours mais rien n'avance",
+        "Mon équipe me prend trop d'énergie",
+      ]);
     }
   }, [supabase]);
 
@@ -87,12 +109,14 @@ export default function DumpPage() {
       const d = await res.json();
 
       if (d.observation) {
-        const tefiContent = `${d.observation}\n\n**${d.priority}**\n\n${d.actions.map((a: string, i: number) => `${i + 1}. ${a}`).join("\n")}\n\n${d.question}`;
+        // Inclure la formulation AIMANT+ si disponible
+        const aimantBlock = d.aimant ? `\n\n${d.aimant}` : "";
+        const tefiContent = `${d.observation}\n\n${aimantBlock}\n\n${d.actions.map((a: string, i: number) => `${i + 1}. ${a}`).join("\n")}\n\n${d.question}`.trim();
 
         // Créer les tâches depuis les actions
         const taskItems: TaskItem[] = d.actions.map((a: string) => ({ title: a }));
 
-        // Sauvegarder tâches
+        // Sauvegarder tâches sous le nom de la priorité (= le projet/thème)
         await saveTasksToSupabase(taskItems, d.priority?.slice(0, 60) || "Priorité");
 
         const msgs: Msg[] = [
@@ -213,7 +237,21 @@ export default function DumpPage() {
             />
 
             {dump.length > 20 && (
-              <p style={{ fontSize: "11px", color: "var(--texte-discret)", textAlign: "right", marginTop: "-16px", marginBottom: "12px" }}>{dump.length} car.</p>
+              <p style={{ fontSize: "11px", color: "var(--texte-discret)", textAlign: "right", marginTop: "-16px", marginBottom: "8px" }}>{dump.length} car.</p>
+            )}
+
+            {/* Étincelles — s'affichent si le dump est vide */}
+            {dump.trim().length === 0 && etincelles.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+                {etincelles.map((e, i) => (
+                  <button key={i} onClick={() => setDump(e)}
+                    style={{ background: "none", border: "1.5px solid rgba(92,26,46,0.15)", borderRadius: "20px", padding: "9px 16px", fontSize: "13px", fontFamily: "DM Sans", color: "var(--texte-tertiary)", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--bordeaux)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--bordeaux)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(92,26,46,0.15)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--texte-tertiary)"; }}>
+                    {e}
+                  </button>
+                ))}
+              </div>
             )}
 
             {/* BOUTON VOIX — mode principal */}

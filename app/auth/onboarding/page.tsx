@@ -28,6 +28,7 @@ export default function OnboardingPage() {
   const [anciennete, setAnciennete] = useState("");
   const [etat, setEtat] = useState("");
   const [saving, setSaving] = useState(false);
+  const [tefiFeedback, setTefiFeedback] = useState("");
   const supabase = createClient();
 
   async function save(step: string, extra?: object) {
@@ -39,6 +40,23 @@ export default function OnboardingPage() {
   async function handleQ1() {
     if (!entreprise.trim()) return;
     await save("q1", { entreprise: entreprise.trim() });
+
+    // Feedback stratégique de Téfi sur l'entreprise
+    try {
+      const res = await fetch("/api/tefi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{
+            role: "user",
+            content: `Mon activité : ${entreprise.trim()}. Donne-moi UN seul insight stratégique pertinent sur cette activité en 1-2 phrases. Pas un compliment. Quelque chose de vrai et utile. Pas de "c'est intéressant". Direct et sincère.`,
+          }],
+        }),
+      });
+      const d = await res.json();
+      if (d.text) setTefiFeedback(d.text.split("\n")[0]);
+    } catch { /* feedback non bloquant */ }
+
     setStep(1);
   }
 
@@ -121,6 +139,7 @@ export default function OnboardingPage() {
 
         {step === 1 && (
           <>
+            {tefiFeedback && tefiSays(tefiFeedback)}
             {tefiSays("Et tu es dans ce rôle de dirigeant depuis…")}
             {["Moins de 3 ans", "Plus de 3 ans"].map(opt => btn(opt, () => handleQ2(opt)))}
             <button onClick={skip} style={{ width: "100%", background: "none", border: "none", color: "var(--texte-discret)", fontSize: "12px", cursor: "pointer", fontFamily: "DM Sans", marginTop: "4px" }}>Passer</button>
