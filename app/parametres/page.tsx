@@ -166,6 +166,25 @@ export default function ParametresPage() {
           {sesameResult && <p style={{ fontSize: "12px", color: sesameResult.startsWith("✓") ? "var(--vert)" : "#B00020", marginTop: "8px" }}>{sesameResult}</p>}
         </div>
 
+        {/* SÉCURITÉ & CONFIDENTIALITÉ */}
+        <p style={{ fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--texte-discret)", marginBottom: "10px" }}>Sécurité & Confidentialité</p>
+        <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", padding: "20px", marginBottom: "20px", border: "1px solid rgba(26,18,16,0.08)" }}>
+          {[
+            { icon: "🔒", title: "Tes données t'appartiennent", desc: "Chaque espace est cloisonné. Aucun utilisateur ne peut voir les données d'un autre, même technique." },
+            { icon: "🛡️", title: "Chiffrement de bout en bout", desc: "Tes Dumps et conversations sont chiffrés en transit (HTTPS) et au repos (AES-256 via Supabase)." },
+            { icon: "👁️", title: "Personne ne lit tes Dumps", desc: "Aucun humain de l'équipe Duleme & Cie n'a accès à tes conversations. Pas même nous." },
+            { icon: "🏰", title: "Isolation des données (RLS)", desc: "Row Level Security activé sur toutes les tables. Chaque requête est vérifiée côté base de données." },
+          ].map(({ icon, title, desc }) => (
+            <div key={title} style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+              <span style={{ fontSize: "20px", flexShrink: 0 }}>{icon}</span>
+              <div>
+                <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--texte)", marginBottom: "3px" }}>{title}</p>
+                <p style={{ fontSize: "12px", color: "var(--texte-discret)", lineHeight: "1.5" }}>{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* LÉGAL */}
         <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", padding: "0 16px", marginBottom: "20px", border: "1px solid rgba(26,18,16,0.08)" }}>
           {[["Politique de confidentialité", "/rgpd"], ["CGU", "/cgu"], ["Mentions légales", "/mentions-legales"]].map(([l, h]) => (

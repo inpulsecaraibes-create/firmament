@@ -238,11 +238,68 @@ export default function DumpPage() {
     setChatLoading(false);
   }
 
-  function toggleVoice(targetSetter: (v: string) => void) {
+  // Whisper (haute qualité) avec fallback sur browser Speech API
+  async function toggleVoice(targetSetter: (v: string) => void) {
+    if (listening) {
+      // Arrêter — si on est en mode Whisper, déclencher la transcription
+      if (recRef.current?.mediaRecorder) {
+        recRef.current.mediaRecorder.stop();
+      } else {
+        recRef.current?.stop();
+      }
+      setListening(false);
+      return;
+    }
+
+    // Essayer Whisper d'abord via MediaRecorder
+    if (navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/ogg";
+        const recorder = new MediaRecorder(stream, { mimeType });
+        const chunks: Blob[] = [];
+
+        recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+        recorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(chunks, { type: mimeType });
+          const form = new FormData();
+          form.append("audio", blob, "audio.webm");
+          form.append("language", "fr");
+
+          setListening(false);
+          // Indicateur de traitement
+          // Ajouter indicateur visuel
+          const existingVal = document.querySelector("textarea")?.value || "";
+          targetSetter(existingVal + " [transcription en cours...]");
+
+          try {
+            const res = await fetch("/api/transcribe", { method: "POST", body: form });
+            const d = await res.json();
+            if (d.transcript) {
+              // Remplacer l'indicateur par la transcription réelle
+              const currentVal = document.querySelector("textarea")?.value || "";
+              targetSetter(currentVal.replace(" [transcription en cours...]", "") + " " + d.transcript.trim());
+              return;
+            }
+          } catch { /* fallback */ }
+
+          // Si Whisper échoue → supprimer l'indicateur
+          const currentVal2 = document.querySelector("textarea")?.value || "";
+          targetSetter(currentVal2.replace(" [transcription en cours...]", ""));
+        };
+
+        recRef.current = { mediaRecorder: recorder };
+        recorder.start();
+        setListening(true);
+        return;
+      } catch { /* fallback vers browser API */ }
+    }
+
+    // Fallback : browser Speech Recognition API
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) { alert("La dictée n'est pas supportée sur ce navigateur."); return; }
-    if (listening) { recRef.current?.stop(); setListening(false); return; }
+    if (!SR) return;
     const r = new SR();
     r.lang = "fr-FR"; r.continuous = true; r.interimResults = true;
     r.onresult = (ev: { results: SpeechRecognitionResultList }) => {

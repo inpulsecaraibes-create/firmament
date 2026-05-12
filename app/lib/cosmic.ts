@@ -39,14 +39,21 @@ function getNumerology(date: Date): number {
   return sum;
 }
 
+// Cache pour éviter de recalculer à chaque render — valide pour toute la journée
+const _cache = new Map<string, string>();
+
 export function getCosmicLine(date: Date = new Date()): string {
+  const cacheKey = date.toISOString().split("T")[0]; // clé = date du jour
+  if (_cache.has(cacheKey)) return _cache.get(cacheKey)!;
   try {
     const moon = SunCalc.getMoonIllumination(date);
     const phaseName = getMoonPhaseName(moon.fraction, moon.phase);
     const phaseData = MOON_PHASES[phaseName];
     const num = getNumerology(date);
     const numWord = NUMEROLOGY[num] || "Clarté";
-    return `${phaseData.emoji} ${phaseData.name} · ${phaseData.desc} · Jour ${num} · ${numWord}`;
+    const result = `${phaseData.emoji} ${phaseData.name} · ${phaseData.desc} · Jour ${num} · ${numWord}`;
+    _cache.set(cacheKey, result);
+    return result;
   } catch {
     return "🌗 Dernier quartier · propice aux décisions de rupture · Jour 8 · Abondance";
   }
