@@ -20,6 +20,9 @@ export default function ParametresPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [sesameCode, setSesameCode] = useState("");
+  const [sesameResult, setSesameResult] = useState<string | null>(null);
+  const [sesameLoading, setSesameLoading] = useState(false);
   const supabase = createClient();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,6 +140,31 @@ export default function ParametresPage() {
             </div>
           </>
         )}
+
+        {/* CODE SÉSAME */}
+        <p style={{ fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--texte-discret)", marginBottom: "10px" }}>Code Sésame</p>
+        <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", padding: "16px", marginBottom: "20px", border: "1px solid rgba(26,18,16,0.08)" }}>
+          <p style={{ fontSize: "13px", color: "var(--texte-discret)", marginBottom: "12px" }}>Un code reçu de l'équipe Duleme & Cie — prolonge ton accès de 30 jours.</p>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input value={sesameCode} onChange={e => setSesameCode(e.target.value.toUpperCase())} placeholder="XXXXXX" maxLength={10}
+              style={{ flex: 1, backgroundColor: "transparent", color: "var(--texte)", borderBottom: "1.5px solid var(--texte-discret)", borderTop: "none", borderLeft: "none", borderRight: "none", fontSize: "15px", padding: "8px 4px", fontFamily: "monospace", letterSpacing: "0.15em" }}
+              onFocus={e => { (e.target as HTMLInputElement).style.borderBottomColor = "var(--bordeaux)"; }}
+              onBlur={e => { (e.target as HTMLInputElement).style.borderBottomColor = "var(--texte-discret)"; }} />
+            <button onClick={async () => {
+              if (!sesameCode.trim()) return;
+              setSesameLoading(true); setSesameResult(null);
+              const res = await fetch("/api/sesame", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: sesameCode }) });
+              const d = await res.json();
+              if (d.success) { setSesameResult(`✓ ${d.newDaysLeft} jours d'accès activés !`); setSesameCode(""); }
+              else setSesameResult(d.error || "Code invalide");
+              setSesameLoading(false);
+            }} disabled={sesameLoading || !sesameCode.trim()}
+              style={{ backgroundColor: sesameCode.trim() && !sesameLoading ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "8px", padding: "8px 16px", border: "none", cursor: "pointer", fontSize: "13px", fontFamily: "DM Sans", fontWeight: 500 }}>
+              {sesameLoading ? "···" : "Activer"}
+            </button>
+          </div>
+          {sesameResult && <p style={{ fontSize: "12px", color: sesameResult.startsWith("✓") ? "var(--vert)" : "#B00020", marginTop: "8px" }}>{sesameResult}</p>}
+        </div>
 
         {/* LÉGAL */}
         <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", padding: "0 16px", marginBottom: "20px", border: "1px solid rgba(26,18,16,0.08)" }}>

@@ -145,6 +145,7 @@ export default function HomePage() {
   const [showPhrase, setShowPhrase] = useState(false);
   const [openThemes, setOpenThemes] = useState<Set<string>>(new Set());
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
+  const [isExpired, setIsExpired] = useState(false);
   const [tefiGreeting, setTefiGreeting] = useState<string>("");
   const greetingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const supabase = createClient();
@@ -160,6 +161,7 @@ export default function HomePage() {
       if (p.trial_ends_at) {
         const d = Math.ceil((new Date(p.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
         setDaysLeft(d);
+        setIsExpired(d <= 0);
       }
 
       // Bulle d'accueil Téfi — première ouverture de la journée
@@ -317,16 +319,21 @@ export default function HomePage() {
                 </button>
                 {openThemes.has(th.id) && (
                   <div style={{ borderTop: "1px solid rgba(26,18,16,0.06)" }}>
-                    {th.tasks.map((task, i) => (
-                      <div key={task.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 16px", borderBottom: i < th.tasks.length - 1 ? "1px solid rgba(26,18,16,0.04)" : "none" }}>
-                        <button onClick={async () => {
-                          await supabase.from("tasks").update({ status: "done" }).eq("id", task.id);
-                          setThemes(prev => prev.map(t => t.id === th.id ? { ...t, tasks: t.tasks.filter(tk => tk.id !== task.id) } : t));
-                        }} style={{ width: "18px", height: "18px", borderRadius: "4px", border: "1.5px solid rgba(92,26,46,0.2)", backgroundColor: "transparent", cursor: "pointer", flexShrink: 0 }} />
-                        <span style={{ fontSize: "13px", color: "var(--texte-secondary)", flex: 1, lineHeight: "1.4" }}>{task.title}</span>
-                        {task.deadline_text && <span style={{ fontSize: "11px", color: "var(--texte-discret)" }}>{task.deadline_text}</span>}
-                      </div>
-                    ))}
+                    {th.tasks.map((task, i) => {
+                      // Blur tâches 6+ si trial expiré
+                      const isBlurred = isExpired && i >= 5;
+                      return (
+                        <div key={task.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 16px", borderBottom: i < th.tasks.length - 1 ? "1px solid rgba(26,18,16,0.04)" : "none", filter: isBlurred ? "blur(4px)" : "none", pointerEvents: isBlurred ? "none" : "auto", position: "relative" }}>
+                          {isBlurred && <span style={{ position: "absolute", right: "12px", fontSize: "14px" }}>🔒</span>}
+                          <button onClick={async () => {
+                            await supabase.from("tasks").update({ status: "done" }).eq("id", task.id);
+                            setThemes(prev => prev.map(t => t.id === th.id ? { ...t, tasks: t.tasks.filter(tk => tk.id !== task.id) } : t));
+                          }} style={{ width: "18px", height: "18px", borderRadius: "4px", border: "1.5px solid rgba(92,26,46,0.2)", backgroundColor: "transparent", cursor: "pointer", flexShrink: 0 }} />
+                          <span style={{ fontSize: "13px", color: "var(--texte-secondary)", flex: 1, lineHeight: "1.4" }}>{task.title}</span>
+                          {task.deadline_text && <span style={{ fontSize: "11px", color: "var(--texte-discret)" }}>{task.deadline_text}</span>}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

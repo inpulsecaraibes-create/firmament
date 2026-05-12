@@ -111,9 +111,11 @@ export default function DumpPage() {
     if (dump.trim().length < 5 || loading) return;
     setLoading(true);
 
-    // Sauvegarder le dump
+    // Sauvegarder le dump + tracker le parrainage
     if (userId) {
       await supabase.from("conversations").insert({ user_id: userId, role: "user", content: dump, session_date: new Date().toISOString().split("T")[0] });
+      // Parrainage tracking (non bloquant)
+      fetch("/api/track-dump", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) }).catch(() => {});
     }
 
     try {

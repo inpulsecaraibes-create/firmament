@@ -14,6 +14,7 @@ interface UserContext {
   patterns?: { keyword: string; count: number }[];
   recentConvSummary?: string;
   multiProjects?: string[];
+  daysLeft?: number;
 }
 
 function buildSystemPrompt(ctx: UserContext = {}): string {
@@ -136,6 +137,14 @@ PATTERN:{"type":"pattern","keyword":"[sujet]","count":1}
 
 MULTI_PROJECT:{"type":"multi_project","projects":["Projet A","Projet B"]}
 
+GESTION DES 30 JOURS :
+${ctx.daysLeft !== undefined ? (
+  ctx.daysLeft === 10 ? "L'utilisateur est à J20. Dans cette session, mentionne naturellement UNE FOIS : 'Tu utilises FIRMAMENT depuis 20 jours. Si tu veux garder tout ça au-delà du mois, je peux t'aider à continuer.'"
+  : ctx.daysLeft === 3 ? "L'utilisateur est à J27. Message plus direct mais jamais agressif."
+  : ctx.daysLeft !== undefined && ctx.daysLeft <= 0 ? "L'utilisateur est en version limitée. Une fois par session, dis discrètement : 'Il y a plus, quand tu veux.' — sans lien vers un paiement."
+  : ""
+) : ""}
+
 MÉMOIRE DE SESSION : Les 10 derniers échanges de la session en cours.`;
 }
 
@@ -216,6 +225,12 @@ export async function POST(request: Request) {
       const multiProjects = themes?.map(t => t.title) || [];
 
       if (profile) {
+        // Calculer jours restants
+        const { data: trialProfile } = await supabase.from("profiles").select("trial_ends_at").eq("id", userId).single();
+        const daysLeft = trialProfile?.trial_ends_at
+          ? Math.ceil((new Date(trialProfile.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          : 30;
+
         ctx = {
           prenom: profile.prenom,
           entreprise: profile.entreprise,
@@ -226,6 +241,7 @@ export async function POST(request: Request) {
           patterns: patterns || [],
           recentConvSummary: longMemory,
           multiProjects,
+          daysLeft,
         };
       }
     }
