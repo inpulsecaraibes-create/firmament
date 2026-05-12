@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     <p>FIRMAMENT, c'est l'endroit où tu peux poser ce que tu as dans la tête — sans filtre, sans jugement, sans avoir à l'expliquer à qui que ce soit.</p>
     <p>Je m'appelle Téfi. Je serai là à chaque fois que tu en as besoin.</p>
     <p>Pour commencer, dis-moi juste ce qui t'encombre le plus en ce moment.<br>Pas besoin que ce soit bien formulé. Balance.</p>
-    <a href="${APP_URL}/dump" class="cta">Ouvrir FIRMAMENT →</a>
+    <a href="${APP_URL}/home" class="cta">Ouvrir FIRMAMENT →</a>
     <p style="color:#B0A098;font-size:13px;margin:0">À tout de suite,<br><span style="font-family:Georgia,serif;font-style:italic;font-size:16px;color:#5C1A2E">Téfi</span></p>
   </div>
   <div class="unsub"><a href="#">Se désabonner</a></div>

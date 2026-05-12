@@ -51,8 +51,8 @@ export async function POST(request: Request) {
     <p style="color:#3D2E28;font-size:14px;line-height:1.65;margin:0;font-style:italic">"Cette clarté est à toi. Si tu veux aller plus loin, ton espace t'attend."</p>
   </div>
   <div style="text-align:center">
-    <a href="https://frmmnt.fr" style="display:inline-block;background:#5C1A2E;color:#F8F5F0;border-radius:12px;padding:14px 28px;font-size:14px;font-weight:500;text-decoration:none">
-      Créer mon espace FIRMAMENT →
+    <a href="https://frmmnt.fr/home" style="display:inline-block;background:#5C1A2E;color:#F8F5F0;border-radius:12px;padding:14px 28px;font-size:14px;font-weight:500;text-decoration:none">
+      Ouvrir FIRMAMENT →
     </a>
   </div>
   <p style="text-align:center;color:#B0A098;font-size:11px;font-style:italic;margin-top:32px">frmmnt.fr · Duleme & Cie</p>

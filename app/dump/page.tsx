@@ -295,7 +295,7 @@ export default function DumpPage() {
               }}
             >
               <span style={{ fontSize: "22px" }}>🎤</span>
-              {listening ? "Arrêter la dictée" : "Parle à Téfi"}
+              {listening ? "Appuyer pour arrêter" : "Appuyer pour dicter"}
             </button>
 
             {/* Bouton Clarifier */}
@@ -350,39 +350,28 @@ export default function DumpPage() {
               </div>
             </div>
 
-            {/* Tâches dans les bulles — cliquables */}
+            {/* Tâches dans les bulles — interactives */}
             {msg.tasks && msg.tasks.length > 0 && msg.role === "assistant" && (
-              <div style={{ marginLeft: "36px", backgroundColor: "var(--fond-blanc)", borderRadius: "12px", padding: "12px 16px", border: "1px solid rgba(92,26,46,0.1)" }}>
-                <p style={{ fontSize: "10px", color: "var(--texte-discret)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "8px" }}>Dans ton espace</p>
-                {msg.tasks.map((t, j) => (
-                  <div key={j} style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "8px 0", borderBottom: j < msg.tasks!.length - 1 ? "1px solid rgba(26,18,16,0.06)" : "none" }}>
-                    <div style={{ width: "20px", height: "20px", borderRadius: "5px", border: "1.5px solid rgba(92,26,46,0.2)", flexShrink: 0, marginTop: "1px" }} />
-                    <div>
-                      <p style={{ fontSize: "14px", color: "var(--texte)", lineHeight: "1.4" }}>
-                        {t.title}
-                        {t.is_urgent && <span style={{ marginLeft: "6px", backgroundColor: "rgba(92,26,46,0.1)", color: "var(--bordeaux)", fontSize: "10px", fontWeight: 600, padding: "1px 5px", borderRadius: "6px" }}>!</span>}
-                      </p>
-                      {t.subtitle && <p style={{ fontSize: "12px", color: "var(--texte-discret)", marginTop: "2px" }}>{t.subtitle}</p>}
-                      {t.deadline_text && <p style={{ fontSize: "11px", color: "var(--bordeaux)", marginTop: "2px" }}>⏰ {t.deadline_text}</p>}
-                    </div>
-                  </div>
-                ))}
-                {userId && (
-                  <a href="/home" style={{ display: "block", textAlign: "center", marginTop: "10px", fontSize: "13px", color: "var(--bordeaux)", textDecoration: "none", fontWeight: 500 }}>
-                    Voir mon espace →
-                  </a>
-                )}
-              </div>
+              <TaskBubble tasks={msg.tasks} isLoggedIn={!!userId} onRebond={(title) => {
+                const rebondMsg = `On part sur : ${title}`;
+                const newMsgs = [...messages, { role: "user" as const, content: rebondMsg }];
+                setMessages(newMsgs);
+                setChatLoading(true);
+                fetch("/api/tefi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: newMsgs.slice(-20).map(m => ({ role: m.role, content: m.content })), userId }) })
+                  .then(r => r.json())
+                  .then(d => { setChatLoading(false); setMessages([...newMsgs, { role: "assistant", content: d.text || "..." }]); })
+                  .catch(() => { setChatLoading(false); setMessages([...newMsgs, { role: "assistant", content: "J'ai du mal à te répondre là. Tu veux réessayer ?" }]); });
+              }} />
             )}
 
-            {/* CTA inscription si non connecté */}
-            {msg.role === "assistant" && !userId && i === messages.length - 1 && messages.length >= 4 && (
+            {/* CTA inscription dès le 2ème message Téfi si non connecté */}
+            {msg.role === "assistant" && !userId && i >= 1 && i === messages.length - 1 && (
               <div style={{ marginLeft: "36px", backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(92,26,46,0.12)", borderRadius: "12px", padding: "16px" }}>
-                <p style={{ fontSize: "14px", color: "var(--texte-secondary)", fontStyle: "italic", marginBottom: "12px" }}>
-                  Je vois que ça t'intéresse. Pour qu'on continue ensemble et garder tout ça, crée ton espace — 30 secondes.
-                </p>
-                <a href="/auth/register" style={{ display: "block", backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "10px", padding: "12px", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500, textDecoration: "none", textAlign: "center", marginBottom: "8px" }}>
+                <a href="/auth/register" style={{ display: "block", backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "10px", padding: "13px", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500, textDecoration: "none", textAlign: "center", marginBottom: "8px" }}>
                   Créer mon espace →
+                </a>
+                <a href="/auth/login" style={{ display: "block", border: "1.5px solid rgba(92,26,46,0.2)", color: "var(--bordeaux)", borderRadius: "10px", padding: "11px", fontSize: "13px", fontFamily: "DM Sans", fontWeight: 500, textDecoration: "none", textAlign: "center", marginBottom: "8px" }}>
+                  On se connaît déjà →
                 </a>
                 <EmailCapture brainDump={dump} priority={messages[1]?.content?.split("\n")[2] || ""} actions={messages[1]?.content?.split("\n").slice(3, 6).map(s => s.replace(/^\d+\.\s*/, "")) || []} />
               </div>
@@ -410,7 +399,7 @@ export default function DumpPage() {
         </button>
         <textarea value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-          placeholder={prenom ? `Dis à Téfi ce qui se passe, ${prenom}…` : "Dis à Téfi ce qui se passe…"} rows={1}
+          placeholder={prenom ? `${prenom}, dis-moi…` : "Réponds…"} rows={1}
           style={{ flex: 1, resize: "none", border: "none", borderBottom: "1.5px solid var(--texte-discret)", backgroundColor: "transparent", fontSize: "15px", fontFamily: "DM Sans", color: "var(--texte)", padding: "8px 4px", lineHeight: "1.5" }}
           onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }}
           onBlur={e => { e.target.style.borderBottomColor = "var(--texte-discret)"; }}
@@ -421,6 +410,55 @@ export default function DumpPage() {
         </button>
       </div>
     </main>
+  );
+}
+
+// Tâches dans les bulles — interactives pour tous (connecté ou non)
+function TaskBubble({ tasks, isLoggedIn, onRebond }: {
+  tasks: TaskItem[];
+  isLoggedIn: boolean;
+  onRebond: (title: string) => void;
+}) {
+  const [done, setDone] = useState<Set<number>>(new Set());
+
+  return (
+    <div style={{ marginLeft: "36px", backgroundColor: "var(--fond-blanc)", borderRadius: "12px", padding: "12px 16px", border: "1px solid rgba(92,26,46,0.1)" }}>
+      {tasks.map((t, j) => (
+        <div key={j} style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "8px 0", borderBottom: j < tasks.length - 1 ? "1px solid rgba(26,18,16,0.06)" : "none" }}>
+          {/* Case à cocher — clic = barré */}
+          <button onClick={() => {
+            setDone(prev => { const n = new Set(prev); if (n.has(j)) { n.delete(j); } else { n.add(j); } return n; });
+          }}
+            style={{
+              width: "20px", height: "20px", borderRadius: "5px",
+              border: `1.5px solid ${done.has(j) ? "var(--vert)" : "rgba(92,26,46,0.2)"}`,
+              backgroundColor: done.has(j) ? "var(--vert)" : "transparent",
+              flexShrink: 0, marginTop: "2px", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "all 0.15s",
+            }}>
+            {done.has(j) && <span style={{ color: "white", fontSize: "11px", lineHeight: 1 }}>✓</span>}
+          </button>
+          {/* Titre — clic = Téfi rebondit */}
+          <div style={{ flex: 1 }}>
+            <button onClick={() => !done.has(j) && onRebond(t.title)}
+              style={{ background: "none", border: "none", cursor: done.has(j) ? "default" : "pointer", textAlign: "left", padding: 0, width: "100%" }}>
+              <p style={{ fontSize: "14px", color: done.has(j) ? "var(--texte-discret)" : "var(--texte)", lineHeight: "1.4", textDecoration: done.has(j) ? "line-through" : "none", transition: "all 0.2s" }}>
+                {t.title}
+                {t.is_urgent && <span style={{ marginLeft: "6px", backgroundColor: "rgba(92,26,46,0.1)", color: "var(--bordeaux)", fontSize: "10px", fontWeight: 600, padding: "1px 5px", borderRadius: "6px" }}>!</span>}
+              </p>
+              {t.subtitle && <p style={{ fontSize: "12px", color: "var(--texte-discret)", marginTop: "2px" }}>{t.subtitle}</p>}
+              {t.deadline_text && <p style={{ fontSize: "11px", color: "var(--bordeaux)", marginTop: "2px" }}>⏰ {t.deadline_text}</p>}
+            </button>
+          </div>
+        </div>
+      ))}
+      {isLoggedIn && (
+        <a href="/home" style={{ display: "block", textAlign: "center", marginTop: "10px", fontSize: "13px", color: "var(--bordeaux)", textDecoration: "none", fontWeight: 500 }}>
+          Voir mon espace →
+        </a>
+      )}
+    </div>
   );
 }
 
