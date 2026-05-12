@@ -61,12 +61,16 @@ export default function RegisterPage() {
         const pending = JSON.parse(localStorage.getItem("firmament_pending_tasks") || "[]");
         if (pending.length > 0) {
           try {
+            const tempId = localStorage.getItem("firmament_temp_id");
             const res = await fetch("/api/migrate-tasks", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ userId: uid, pendingTasks: pending }),
+              body: JSON.stringify({ userId: uid, pendingTasks: pending, tempId }),
             });
-            if (res.ok) localStorage.removeItem("firmament_pending_tasks");
+            if (res.ok) {
+              localStorage.removeItem("firmament_pending_tasks");
+              localStorage.removeItem("firmament_temp_id");
+            }
           } catch (e) { console.error("Migration failed:", e); }
         }
       }

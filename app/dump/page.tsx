@@ -62,15 +62,24 @@ export default function DumpPage() {
 
       setEtincelles(suggestions.slice(0, 3));
 
+      // Vérifier si c'est le 1er accès (0 tâches) → cycle d'extraction complet
+      const { count: taskCount } = await supabase.from("tasks").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "active");
+      if ((taskCount || 0) === 0) {
+        // Premier accès → Téfi démarre le cycle de 5 questions
+        const firstMsg: Msg = { role: "assistant", content: "Avant qu'on organise ton espace, j'ai besoin de savoir où tu en es.\n\nDis-moi tout ce que tu as à faire en ce moment — maintenant, demain, dans 6 mois. Balance tout, dans l'ordre que tu veux." };
+        setMessages([firstMsg]);
+        setScreen("chat");
+        return;
+      }
+
       // Vérifier si Le Point doit s'ouvrir (7 jours depuis inscription ou dernier point)
-      const { data: profile } = await supabase.from("profiles").select("created_at").eq("id", user.id).single();
+      const { data: profileData } = await supabase.from("profiles").select("created_at").eq("id", user.id).single();
       const { data: lastPoint } = await supabase.from("points").select("created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).single();
-      const ref = lastPoint?.created_at || profile?.created_at;
+      const ref = lastPoint?.created_at || profileData?.created_at;
       if (ref) {
         const daysSince = Math.floor((Date.now() - new Date(ref).getTime()) / (1000 * 60 * 60 * 24));
         if (daysSince >= 7) {
           setPointMode(true);
-          // Pré-charger Le Point avec la première question de Téfi
           const pointMsg: Msg = { role: "assistant", content: "Ça fait une semaine. Avant qu'on parle de la suite, dis-moi : qu'est-ce que tu as accompli ?" };
           setMessages([pointMsg]);
           setScreen("chat");

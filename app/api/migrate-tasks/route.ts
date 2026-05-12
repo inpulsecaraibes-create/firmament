@@ -9,9 +9,17 @@ const adminClient = createClient(
 
 export async function POST(request: Request) {
   try {
-    const { userId, pendingTasks } = await request.json();
+    const { userId, pendingTasks, tempId } = await request.json();
 
-    if (!userId || !pendingTasks?.length) {
+    if (!userId) return NextResponse.json({ success: true, migrated: 0 });
+
+    // Migration conversations anonymes → user (Correction 2 Point A)
+    if (tempId) {
+      await adminClient.from("conversations").update({ user_id: userId, temp_id: null }).eq("temp_id", tempId).is("user_id", null);
+      await adminClient.from("tasks").update({ user_id: userId, temp_id: null }).eq("temp_id", tempId).is("user_id", null);
+    }
+
+    if (!pendingTasks?.length) {
       return NextResponse.json({ success: true, migrated: 0 });
     }
 
