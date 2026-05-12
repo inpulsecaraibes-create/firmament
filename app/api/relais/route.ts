@@ -22,7 +22,10 @@ export async function POST(request: Request) {
 
     await resend.emails.send({
       from: "FIRMAMENT Le Relais <tefi@frmmnt.fr>",
-      to: ["dulemeandcie@hotmail.com", "inpulsecaraibes@gmail.com"],
+      to: [
+        process.env.RELAIS_EMAIL_1 || "admin@frmmnt.fr",
+        process.env.RELAIS_EMAIL_2 || "admin@frmmnt.fr",
+      ].filter((v, i, a) => a.indexOf(v) === i), // dédoublonner si même valeur
       subject: `Le Relais — ${urgence === "oui" ? "🔴 URGENT" : "Demande"} : ${besoin} — ${prenom || "Utilisateur"}`,
       html,
     });
