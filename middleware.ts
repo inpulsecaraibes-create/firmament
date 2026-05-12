@@ -29,9 +29,9 @@ export async function middleware(request: NextRequest) {
   if (publicPaths.some(p => path.startsWith(p))) return response;
   if (path.startsWith("/api/") || path.startsWith("/_next/") || path.match(/\.(png|svg|ico|jpg|webp|css|js|woff)$/)) return response;
 
-  // Non connecté → landing (/)
+  // Non connecté → accès libre à / et /dump
   if (!user) {
-    if (path === "/") return response;
+    if (path === "/" || path.startsWith("/dump")) return response;
     return NextResponse.redirect(new URL("/", request.url));
   }
 
