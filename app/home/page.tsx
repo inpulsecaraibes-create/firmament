@@ -7,14 +7,17 @@ import { Settings, ClipboardList, Bookmark, Check, X } from "lucide-react";
 function capitalize(s: string) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
 // Composant tâche avec swipe gauche/droit
-function SwipeableTaskRow({ task, isDone, onDone, onUpdate, borderBottom }: {
+function SwipeableTaskRow({ task, isDone, onDone, onUpdate, onRework, borderBottom }: {
   task: Task; isDone: boolean;
   onDone: () => void;
   onUpdate: (id: string, u: { is_urgent?: boolean; is_priority?: boolean; is_sleeping?: boolean }) => void;
+  onRework: (taskTitle: string) => void;
   borderBottom: boolean;
 }) {
   const [swipeX, setSwipeX] = useState(0);
   const [showPanel, setShowPanel] = useState(false);
+  const [showDesktopMenu, setShowDesktopMenu] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const dragging = useRef(false);
 
@@ -34,8 +37,8 @@ function SwipeableTaskRow({ task, isDone, onDone, onUpdate, borderBottom }: {
   function onTouchEnd() {
     if (!dragging.current) { touchStart.current = null; return; }
     if (swipeX < -60) {
-      // Swipe gauche → ouvrir dump pour retravailler
-      window.location.href = `/dump?rework=${encodeURIComponent(task.title)}`;
+      // Swipe gauche → chat inline pour retravailler
+      onRework(task.title);
     } else if (swipeX > 60) {
       // Swipe droit → panneau statut
       setShowPanel(true);
@@ -81,7 +84,8 @@ function SwipeableTaskRow({ task, isDone, onDone, onUpdate, borderBottom }: {
         </div>
       )}
       <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
-        style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "13px 16px", borderBottom: borderBottom ? "1px solid rgba(26,18,16,0.06)" : "none", transform: `translateX(${swipeX}px)`, transition: swipeX === 0 ? "transform 0.2s" : "none", backgroundColor: isDone ? "rgba(27,58,45,0.04)" : "transparent" }}>
+        onMouseEnter={() => setHovered(true)} onMouseLeave={() => { setHovered(false); setShowDesktopMenu(false); }}
+        style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "13px 16px", borderBottom: borderBottom ? "1px solid rgba(26,18,16,0.06)" : "none", transform: `translateX(${swipeX}px)`, transition: swipeX === 0 ? "transform 0.2s" : "none", backgroundColor: isDone ? "rgba(27,58,45,0.04)" : "transparent", position: "relative" }}>
         <button onClick={onDone}
           style={{ width: "22px", height: "22px", borderRadius: "50%", border: `1.5px solid ${isDone ? "var(--vert)" : "rgba(92,26,46,0.25)"}`, backgroundColor: isDone ? "var(--vert)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer", marginTop: "1px", transition: "all 0.3s" }}>
           {isDone && <Check size={12} color="white" strokeWidth={3} />}
@@ -93,6 +97,29 @@ function SwipeableTaskRow({ task, isDone, onDone, onUpdate, borderBottom }: {
         </div>
         {task.is_urgent && !isDone && <span style={{ backgroundColor: "rgba(92,26,46,0.08)", color: "var(--bordeaux)", fontSize: "10px", fontWeight: 600, padding: "2px 6px", borderRadius: "8px", flexShrink: 0 }}>!</span>}
         {task.is_priority && !task.is_urgent && !isDone && <span style={{ backgroundColor: "rgba(140,109,63,0.1)", color: "var(--or)", fontSize: "10px", padding: "2px 5px", borderRadius: "6px", flexShrink: 0 }}>↑</span>}
+        {/* Desktop "..." bouton — visible au hover */}
+        {hovered && !isDone && (
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <button onClick={() => setShowDesktopMenu(!showDesktopMenu)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", fontSize: "16px", padding: "0 4px", lineHeight: 1 }}>···</button>
+            {showDesktopMenu && (
+              <div style={{ position: "absolute", right: 0, top: "100%", backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(26,18,16,0.1)", borderRadius: "10px", padding: "4px", zIndex: 50, minWidth: "180px", boxShadow: "0 4px 16px rgba(26,18,16,0.08)" }}>
+                <button onClick={() => { setShowDesktopMenu(false); onRework(task.title); }}
+                  style={{ display: "block", width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: "13px", color: "var(--texte-secondary)", borderRadius: "6px" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "var(--fond)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}>
+                  Retravailler avec Téfi
+                </button>
+                <button onClick={() => { setShowDesktopMenu(false); setShowPanel(true); }}
+                  style={{ display: "block", width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: "13px", color: "var(--texte-secondary)", borderRadius: "6px" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "var(--fond)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}>
+                  Urgent / Priorité / En sommeil
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
@@ -147,6 +174,13 @@ export default function HomePage() {
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
   const [isExpired, setIsExpired] = useState(false);
   const [tefiGreeting, setTefiGreeting] = useState<string>("");
+  // Modal rework (swipe gauche / desktop "Retravailler")
+  const [reworkTask, setReworkTask] = useState<string | null>(null);
+  const [reworkInput, setReworkInput] = useState("");
+  const [reworkMsg, setReworkMsg] = useState("Tu veux revoir cette tâche ? Dis-moi comment.");
+  const [reworkLoading, setReworkLoading] = useState(false);
+  // Abandon projet
+  const [abandonTheme, setAbandonTheme] = useState<{ id: string; title: string } | null>(null);
   const greetingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const supabase = createClient();
 
@@ -204,6 +238,39 @@ export default function HomePage() {
     }, 3000);
   }
 
+  async function handleRework(taskTitle: string) {
+    setReworkTask(taskTitle);
+    setReworkMsg("Tu veux revoir cette tâche ? Dis-moi comment.");
+    setReworkInput("");
+  }
+
+  async function sendRework() {
+    if (!reworkInput.trim() || reworkLoading) return;
+    setReworkLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const res = await fetch("/api/tefi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: [
+        { role: "assistant", content: `Tu veux revoir : "${reworkTask}". Dis-moi comment.` },
+        { role: "user", content: reworkInput },
+      ], userId: user?.id }),
+    });
+    const d = await res.json();
+    setReworkMsg(d.text || "Note bien. Je mets à jour.");
+    setReworkInput("");
+    setReworkLoading(false);
+    // Recharger les tâches après 1s
+    setTimeout(load, 1000);
+  }
+
+  async function handleAbandon(themeId: string) {
+    await supabase.from("tasks").delete().eq("theme_id", themeId);
+    await supabase.from("themes").delete().eq("id", themeId);
+    setThemes(prev => prev.filter(t => t.id !== themeId));
+    setAbandonTheme(null);
+  }
+
   // Mise à jour urgence/priorité/sommeil depuis le panneau swipe
   async function updateTaskStatus(id: string, updates: { is_urgent?: boolean; is_priority?: boolean; is_sleeping?: boolean }) {
     await supabase.from("tasks").update(updates).eq("id", id);
@@ -255,6 +322,57 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Modal Rework (swipe gauche / desktop "Retravailler") */}
+      {reworkTask && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "flex-end", backgroundColor: "rgba(26,18,16,0.4)" }} onClick={() => setReworkTask(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "16px 16px 0 0", width: "100%", padding: "20px 20px 40px", borderLeft: "2px solid var(--bordeaux)" }}>
+            <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "16px" }}>
+              <div style={{ width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "16px", fontStyle: "italic" }}>t</span>
+              </div>
+              <p style={{ fontSize: "15px", color: "var(--texte-secondary)", fontStyle: "italic", lineHeight: "1.5", fontFamily: "Cormorant Garamond, serif" }}>{reworkMsg}</p>
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input value={reworkInput} onChange={e => setReworkInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") sendRework(); }}
+                placeholder="Dis-moi…" autoFocus
+                style={{ flex: 1, backgroundColor: "transparent", color: "var(--texte)", borderBottom: "1.5px solid var(--texte-discret)", borderTop: "none", borderLeft: "none", borderRight: "none", fontSize: "15px", padding: "8px 4px", fontFamily: "DM Sans" }}
+                onFocus={e => { (e.target as HTMLInputElement).style.borderBottomColor = "var(--bordeaux)"; }}
+                onBlur={e => { (e.target as HTMLInputElement).style.borderBottomColor = "var(--texte-discret)"; }}
+              />
+              <button onClick={sendRework} disabled={!reworkInput.trim() || reworkLoading}
+                style={{ backgroundColor: reworkInput.trim() ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "8px", padding: "8px 16px", border: "none", cursor: "pointer", fontSize: "13px" }}>
+                {reworkLoading ? "···" : "→"}
+              </button>
+            </div>
+            <button onClick={() => setReworkTask(null)} style={{ marginTop: "12px", background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", fontSize: "12px", width: "100%", textAlign: "center" }}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Abandon projet */}
+      {abandonTheme && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(26,18,16,0.4)", padding: "24px" }} onClick={() => setAbandonTheme(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "16px", padding: "24px", maxWidth: "360px", width: "100%" }}>
+            <p style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "18px", color: "var(--texte)", marginBottom: "12px", lineHeight: "1.4" }}>
+              Tu veux qu'on reparte de zéro sur « {abandonTheme.title} » ? Je supprime toutes les tâches liées.
+            </p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={() => handleAbandon(abandonTheme.id)}
+                style={{ flex: 1, backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "10px", padding: "12px", border: "none", cursor: "pointer", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500 }}>
+                Oui, on repart
+              </button>
+              <button onClick={() => setAbandonTheme(null)}
+                style={{ flex: 1, backgroundColor: "transparent", border: "1px solid rgba(26,18,16,0.1)", borderRadius: "10px", padding: "12px", cursor: "pointer", fontSize: "14px", fontFamily: "DM Sans", color: "var(--texte-secondary)" }}>
+                Non, garder
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bulle d'accueil Téfi */}
       {tefiGreeting && (
         <a href="/dump" style={{ display: "flex", gap: "10px", alignItems: "flex-start", padding: "12px 20px", backgroundColor: "var(--fond-or)", textDecoration: "none", cursor: "pointer", borderBottom: "1px solid rgba(26,18,16,0.06)" }}
@@ -293,7 +411,7 @@ export default function HomePage() {
             <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", border: "1px solid rgba(26,18,16,0.07)", overflow: "hidden" }}>
               <p style={{ fontSize: "10px", color: "var(--texte-discret)", padding: "6px 16px 0", fontStyle: "italic" }}>← glisse pour modifier · → pour les options</p>
               {tasks.map((task, i) => (
-                <SwipeableTaskRow key={task.id} task={task} isDone={doneAnimating.has(task.id)} onDone={() => toggleTask(task.id)} onUpdate={updateTaskStatus} borderBottom={i < tasks.length - 1} />
+                <SwipeableTaskRow key={task.id} task={task} isDone={doneAnimating.has(task.id)} onDone={() => toggleTask(task.id)} onUpdate={updateTaskStatus} onRework={handleRework} borderBottom={i < tasks.length - 1} />
               ))}
             </div>
           )}
@@ -310,13 +428,21 @@ export default function HomePage() {
           ) : (
             themes.map(th => (
               <div key={th.id} style={{ backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(26,18,16,0.07)", borderRadius: "10px", marginBottom: "4px", overflow: "hidden" }}>
-                <button onClick={() => toggleTheme(th.id)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "13px 16px", background: "none", border: "none", cursor: "pointer" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--texte)" }}>{th.title}</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontSize: "12px", color: "var(--texte-discret)" }}>{th.tasks.length}</span>
-                    <span style={{ color: "var(--texte-discret)", fontSize: "12px" }}>{openThemes.has(th.id) ? "▾" : "▸"}</span>
-                  </div>
-                </button>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <button onClick={() => toggleTheme(th.id)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: 1, padding: "13px 16px", background: "none", border: "none", cursor: "pointer" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--texte)" }}>{th.title}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "12px", color: "var(--texte-discret)" }}>{th.tasks.length}</span>
+                      <span style={{ color: "var(--texte-discret)", fontSize: "12px" }}>{openThemes.has(th.id) ? "▾" : "▸"}</span>
+                    </div>
+                  </button>
+                  {/* ↺ Abandonner ce projet */}
+                  <button onClick={() => setAbandonTheme({ id: th.id, title: th.title })}
+                    title="Abandonner ce projet"
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--texte-discret)", padding: "0 16px 0 0", fontSize: "16px", opacity: 0.5 }}>
+                    ↺
+                  </button>
+                </div>
                 {openThemes.has(th.id) && (
                   <div style={{ borderTop: "1px solid rgba(26,18,16,0.06)" }}>
                     {th.tasks.map((task, i) => {
