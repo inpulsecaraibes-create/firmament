@@ -214,13 +214,24 @@ export default function HomePage() {
       }
     }
 
-    // Top 3 tasks
-    const { data: t } = await supabase.from("tasks").select("*").eq("user_id", user.id).eq("status", "active").eq("is_sleeping", false).order("is_urgent", { ascending: false }).order("is_priority", { ascending: false }).order("position", { ascending: true }).limit(3);
+    // Top 3 tasks — requête avec log pour debug
+    const { data: t, error: tasksErr } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .eq("is_sleeping", false)
+      .order("is_urgent", { ascending: false })
+      .order("is_priority", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(3);
+    if (tasksErr) console.error("[home] tasks error:", tasksErr);
     if (t) setTasks(t);
 
     // Themes avec tasks
-    const { data: th } = await supabase.from("themes").select("*, tasks(*)").eq("user_id", user.id).order("position");
-    if (th) setThemes(th.map(t => ({ ...t, tasks: (t.tasks || []).filter((tk: Task) => tk.status === "active" && !tk.is_sleeping).sort((a: Task, b: Task) => a.position - b.position) })));
+    const { data: th, error: themesErr } = await supabase.from("themes").select("*, tasks(*)").eq("user_id", user.id).order("position");
+    if (themesErr) console.error("[home] themes error:", themesErr);
+    if (th) setThemes(th.map(t => ({ ...t, tasks: (t.tasks || []).filter((tk: Task) => tk.status === "active" && !tk.is_sleeping).sort((a: Task, b: Task) => (a.position || 0) - (b.position || 0)) })));
   }, [supabase]);
 
   useEffect(() => { load(); }, [load]);

@@ -25,6 +25,8 @@ export default function DumpPage() {
   const [listening, setListening] = useState(false);
   const [etincelles, setEtincelles] = useState<string[]>([]);
   const [, setPointMode] = useState(false); // Le Point intégré
+  const [gate5Email, setGate5Email] = useState(""); // Email gate au 5ème échange
+  const [gate5Sent, setGate5Sent] = useState(false); // Email capturé
   // tempId pour tracking non-connecté
   useState<string>(() => {
     if (typeof window === "undefined") return "";
@@ -162,6 +164,9 @@ export default function DumpPage() {
 
   async function handleSend() {
     if (!input.trim() || chatLoading) return;
+    // Gate au 5ème échange pour non-connectés — email obligatoire
+    const userMsgCount = messages.filter(m => m.role === "user").length;
+    if (!userId && userMsgCount >= 5 && !gate5Sent) return;
     const userMsg: Msg = { role: "user", content: input };
     const newMsgs = [...messages, userMsg];
     setMessages(newMsgs);
@@ -272,30 +277,33 @@ export default function DumpPage() {
               </div>
             )}
 
-            {/* BOUTON VOIX — mode principal */}
+            {/* BOUTON VOIX — icône seule, mode principal */}
             <button
               onClick={() => toggleVoice(setDump)}
+              title={listening ? "Arrêter la dictée" : "Dicter"}
               style={{
                 width: "100%",
                 backgroundColor: listening ? "var(--bordeaux)" : "var(--fond-blanc)",
                 color: listening ? "var(--fond-blanc)" : "var(--bordeaux)",
-                border: `2px solid var(--bordeaux)`,
+                border: `2px solid ${listening ? "var(--bordeaux)" : "rgba(92,26,46,0.25)"}`,
                 borderRadius: "12px",
-                padding: "18px",
-                fontSize: "16px",
-                fontFamily: "DM Sans",
-                fontWeight: 500,
+                padding: "16px",
+                fontSize: "28px",
                 cursor: "pointer",
                 marginBottom: "12px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "10px",
                 transition: "all 0.2s",
+                position: "relative",
               }}
             >
-              <span style={{ fontSize: "22px" }}>🎤</span>
-              {listening ? "Appuyer pour arrêter" : "Appuyer pour dicter"}
+              {listening ? "⏹" : "🎤"}
+              {listening && (
+                <span style={{ position: "absolute", bottom: "6px", right: "10px", fontSize: "10px", color: "rgba(248,245,240,0.7)", fontFamily: "DM Sans" }}>
+                  ●  en cours
+                </span>
+              )}
             </button>
 
             {/* Bouton Clarifier */}
@@ -364,8 +372,17 @@ export default function DumpPage() {
               }} />
             )}
 
-            {/* CTA inscription dès le 2ème message Téfi si non connecté */}
-            {msg.role === "assistant" && !userId && i >= 1 && i === messages.length - 1 && (
+            {/* CTA discret après 1er échange (non bloquant) */}
+            {msg.role === "assistant" && !userId && i === 1 && messages.length <= 3 && (
+              <div style={{ marginLeft: "36px", padding: "8px 0" }}>
+                <a href="/auth/register" style={{ fontSize: "12px", color: "var(--texte-discret)", textDecoration: "none", borderBottom: "1px solid rgba(176,160,152,0.3)" }}>
+                  Créer mon espace pour garder tout ça →
+                </a>
+              </div>
+            )}
+
+            {/* CTA complet à partir du 3ème échange Téfi */}
+            {msg.role === "assistant" && !userId && i >= 3 && i === messages.length - 1 && (
               <div style={{ marginLeft: "36px", backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(92,26,46,0.12)", borderRadius: "12px", padding: "16px" }}>
                 <a href="/auth/register" style={{ display: "block", backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "10px", padding: "13px", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500, textDecoration: "none", textAlign: "center", marginBottom: "8px" }}>
                   Créer mon espace →
@@ -390,6 +407,22 @@ export default function DumpPage() {
         )}
         <div ref={endRef} />
       </div>
+
+      {/* Gate email au 5ème échange (non connecté) */}
+      {!userId && !gate5Sent && messages.filter(m => m.role === "user").length >= 5 && (
+        <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(26,18,16,0.08)", backgroundColor: "var(--fond-or)" }}>
+          <p style={{ fontSize: "13px", color: "var(--texte-secondary)", fontStyle: "italic", marginBottom: "10px" }}>
+            Pour continuer, laisse-moi ton email — je garde tout ça pour toi.
+          </p>
+          <form onSubmit={async (e) => { e.preventDefault(); if (!gate5Email.trim()) return; await fetch("/api/resume-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: gate5Email, priority: "", actions: [], brainDump: dump }) }); setGate5Sent(true); }} style={{ display: "flex", gap: "8px" }}>
+            <input type="email" value={gate5Email} onChange={e => setGate5Email(e.target.value)} placeholder="ton@email.com" required
+              style={{ flex: 1, backgroundColor: "transparent", color: "var(--texte)", borderBottom: "1.5px solid var(--or)", borderTop: "none", borderLeft: "none", borderRight: "none", fontSize: "15px", padding: "6px 4px", fontFamily: "DM Sans" }} />
+            <button type="submit" style={{ backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "8px", padding: "8px 16px", border: "none", cursor: "pointer", fontSize: "13px", fontFamily: "DM Sans", fontWeight: 500 }}>
+              Continuer
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Input */}
       <div style={{ padding: "10px 16px 24px", borderTop: "1px solid rgba(26,18,16,0.08)", backgroundColor: "var(--fond-blanc)", display: "flex", gap: "8px", alignItems: "flex-end" }}>
