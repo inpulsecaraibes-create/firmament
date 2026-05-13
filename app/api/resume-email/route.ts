@@ -63,7 +63,7 @@ export async function POST(request: Request) {
 </html>`;
 
     await resend.emails.send({
-      from: "Terri · FIRMAMENT <terri@frmmnt.fr>",
+      from: "Terri · FIRMAMENT <tefi@frmmnt.fr>",
       to: email,
       subject: "Terri a structuré ta tête — voilà ce qui compte",
       html,

@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 </html>`;
 
     const { error } = await resend.emails.send({
-      from: "Terri · FIRMAMENT <terri@frmmnt.fr>",
+      from: "Terri · FIRMAMENT <tefi@frmmnt.fr>",
       to: user.email!,
       subject: `Ton Point FIRMAMENT — semaine du ${fmt(weekStart)}`,
       html,

@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 </html>`;
 
     await resend.emails.send({
-      from: "Terri · FIRMAMENT <terri@frmmnt.fr>",
+      from: "Terri · FIRMAMENT <tefi@frmmnt.fr>",
       to: email,
       subject: `${nom ? nom + ", je" : "Je"} suis content de te voir ici.`,
       html,

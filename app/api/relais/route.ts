@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 </div>`;
 
     await resend.emails.send({
-      from: "FIRMAMENT Le Relais <terri@frmmnt.fr>",
+      from: "FIRMAMENT Le Relais <tefi@frmmnt.fr>",
       to: [
         process.env.RELAIS_EMAIL_1 || "admin@frmmnt.fr",
         process.env.RELAIS_EMAIL_2 || "admin@frmmnt.fr",

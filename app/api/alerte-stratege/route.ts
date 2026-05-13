@@ -43,7 +43,7 @@ export async function POST() {
 </div>`;
 
     await resend.emails.send({
-      from: "FIRMAMENT Alerte <terri@frmmnt.fr>",
+      from: "FIRMAMENT Alerte <tefi@frmmnt.fr>",
       to: [process.env.RELAIS_EMAIL_1 || "admin@frmmnt.fr", process.env.RELAIS_EMAIL_2 || "admin@frmmnt.fr"].filter((v,i,a)=>a.indexOf(v)===i),
       subject: `🔴 Alerte surcharge — ${profile.prenom || "Utilisateur"} · frmmnt.fr`,
       html,
