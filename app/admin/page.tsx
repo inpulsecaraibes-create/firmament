@@ -21,8 +21,17 @@ export default function AdminPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { window.location.href = "/auth/login"; return; }
 
-      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-      if (profile?.role !== "admin") { window.location.href = "/home"; return; }
+      // Accès admin : par email autorisé OU par colonne role
+      const ADMIN_EMAILS = ["inpulsecaraibes@gmail.com", "admin@frmmnt.fr"];
+      const isAdminByEmail = ADMIN_EMAILS.includes(user.email || "");
+
+      if (!isAdminByEmail) {
+        // Fallback : vérifier colonne role si elle existe
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+        if (!profile || profile?.role !== "admin") {
+          window.location.href = "/home"; return;
+        }
+      }
 
       const { data } = await supabase.from("profiles")
         .select("id,prenom,email,surcharge_score,clarity_score,ai_mode,trial_ends_at,created_at")
