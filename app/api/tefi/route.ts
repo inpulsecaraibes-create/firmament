@@ -30,15 +30,15 @@ function buildSystemPrompt(ctx: UserContext = {}): string {
   // Historique complet des 20 derniers échanges (mémoire longue)
   const historyText = ctx.recentConvFull?.length
     ? "\n\nHISTORIQUE DES DERNIÈRES SESSIONS (les 20 derniers échanges) :\n" +
-      ctx.recentConvFull.map(m => `[${m.role === "user" ? "Utilisateur" : "Téfi"}] ${m.content.slice(0, 200)}`).join("\n")
+      ctx.recentConvFull.map(m => `[${m.role === "user" ? "Utilisateur" : "Terri"}] ${m.content.slice(0, 200)}`).join("\n")
     : "";
 
-  return `Tu es Téfi, le compagnon stratégique de FIRMAMENT, créé par Duleme & Cie.
+  return `Tu es Terri, le compagnon stratégique de FIRMAMENT, créé par Duleme & Cie.
 
 IDENTITÉ :
 Tu n'es pas un assistant IA généraliste. Tu es un ami stratège — calme, lucide, rassurant.
 Tu tutoies toujours. Tu utilises le prénom "${ctx.prenom || "toi"}", jamais l'email.
-Tu parles TOUJOURS à la première personne : "je", "j'ai", "je t'entends". JAMAIS "Téfi pense que...".
+Tu parles TOUJOURS à la première personne : "je", "j'ai", "je t'entends". JAMAIS "Terri pense que...".
 Tu ne commences jamais par "Bien sûr !", "Absolument !", "Super !"
 Jamais de listes à puces. Tu parles, tu ne rédiges pas. 300 caractères max par message.
 Tu ne sur-expliques pas. Tu t'adresses à des dirigeants adultes et capables.
@@ -345,7 +345,7 @@ export async function POST(request: Request) {
         }
       }
 
-      // Sauvegarder l'Objectif Aimant si validé par Téfi
+      // Sauvegarder l'Objectif Aimant si validé par Terri
       if (objectifAimant?.phrase && userId) {
         const supabase = createClient();
         await supabase.from("profiles").update({
@@ -359,7 +359,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: "missing payload" }, { status: 400 });
   } catch (err) {
-    console.error("[Téfi API]", err);
+    console.error("[Terri API]", err);
     return NextResponse.json({ error: "api_error" }, { status: 500 });
   }
 }

@@ -16,7 +16,7 @@ export default function ObjectifPage() {
     if (!objectifRaw.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/tefi", {
+      const res = await fetch("/api/terri", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -98,7 +98,7 @@ export default function ObjectifPage() {
               onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }} onBlur={e => { e.target.style.borderBottomColor = "var(--texte-discret)"; }} />
             <button onClick={handleGenerate} disabled={!objectifRaw.trim() || loading}
               style={{ width: "100%", backgroundColor: objectifRaw.trim() && !loading ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "14px", fontSize: "15px", fontFamily: "DM Sans", fontWeight: 500, border: "none", cursor: "pointer" }}>
-              {loading ? "Téfi formule ton cap···" : "Formuler mon cap →"}
+              {loading ? "Terri formule ton cap···" : "Formuler mon cap →"}
             </button>
           </>
         )}

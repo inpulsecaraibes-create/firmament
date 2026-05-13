@@ -68,7 +68,7 @@ export default function RelaisPage() {
             <div style={{ backgroundColor: "var(--fond-or)", borderRadius: "12px", padding: "14px 16px", marginBottom: "20px" }}>
               <p style={{ fontSize: "13px", color: "var(--texte-secondary)" }}>
                 {besoin === "Une information ou réponse rapide" && "L'équipe reviendra vers toi très vite."}
-                {besoin === "Monter en compétences sur un sujet" && "Téfi va identifier le module le plus adapté."}
+                {besoin === "Monter en compétences sur un sujet" && "Terri va identifier le module le plus adapté."}
                 {besoin === "Un accompagnement profond" && "L'équipe te propose un appel pour aller plus loin."}
               </p>
             </div>

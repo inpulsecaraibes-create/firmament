@@ -191,7 +191,7 @@ export default function AccueilConnecte({ userName, emailVerified = true, onDump
 
             {top3.length === 0 ? (
               <p style={{ color: "var(--texte-discret)", fontSize: "14px", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif", padding: "8px 0" }}>
-                Fais un Dump — Téfi identifiera tes priorités.
+                Fais un Dump — Terri identifiera tes priorités.
               </p>
             ) : (
               <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(26,18,16,0.07)", position: "relative" }}>
@@ -233,7 +233,7 @@ export default function AccueilConnecte({ userName, emailVerified = true, onDump
             onToggleUrgent={toggleUrgent}
           />
 
-          {/* Téfi disponible */}
+          {/* Terri disponible */}
           <button
             onClick={onDump}
             style={{

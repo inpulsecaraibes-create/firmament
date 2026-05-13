@@ -22,7 +22,7 @@ const RESULT_MESSAGES: Record<string, { title: string; desc: string }> = {
   },
   levier: {
     title: "Le Levier",
-    desc: "Téfi va identifier le module ARSENAL le plus adapté à ta situation.",
+    desc: "Terri va identifier le module ARSENAL le plus adapté à ta situation.",
   },
   pointcap: {
     title: "Le Point de Cap",

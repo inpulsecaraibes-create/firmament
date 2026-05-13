@@ -23,7 +23,7 @@ export default function ActionList({ actions, initialChecked, isLoggedIn = true,
       setBubbleIndex(bubbleIndex === i ? null : i);
       return;
     }
-    // Connecté : état "en exploration", Téfi rebondit
+    // Connecté : état "en exploration", Terri rebondit
     const nextExploring = [...exploring];
     nextExploring[i] = !nextExploring[i];
     setExploring(nextExploring);
@@ -52,7 +52,7 @@ export default function ActionList({ actions, initialChecked, isLoggedIn = true,
               borderRadius: "10px", padding: "12px 14px", marginBottom: "6px", zIndex: 10,
               boxShadow: "0 4px 16px rgba(26,18,16,0.08)",
             }}>
-              {/* Bug F — ton de Téfi, pas un message système */}
+              {/* Bug F — ton de Terri, pas un message système */}
               <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", marginBottom: "10px" }}>
                 <div style={{ width: "22px", height: "22px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "12px", fontStyle: "italic" }}>t</span>

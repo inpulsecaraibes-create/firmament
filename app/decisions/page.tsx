@@ -30,10 +30,10 @@ export default function DecisionsPage() {
       </div>
       <div style={{ padding: "20px" }}>
         <h1 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "26px", fontWeight: 300, color: "var(--texte)", marginBottom: "6px" }}>Mes décisions</h1>
-        <p style={{ color: "var(--texte-discret)", fontSize: "13px", marginBottom: "24px" }}>Remplies automatiquement par Téfi. Lecture seule.</p>
+        <p style={{ color: "var(--texte-discret)", fontSize: "13px", marginBottom: "24px" }}>Remplies automatiquement par Terri. Lecture seule.</p>
         {decisions.length === 0 ? (
           <p style={{ color: "var(--texte-discret)", fontSize: "14px", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif" }}>
-            Téfi notera ici les décisions importantes que tu mentionnes dans tes Dumps.
+            Terri notera ici les décisions importantes que tu mentionnes dans tes Dumps.
           </p>
         ) : decisions.map(d => (
           <div key={d.id} style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "10px", padding: "14px 16px", marginBottom: "8px", border: "1px solid rgba(26,18,16,0.07)", borderLeft: "2px solid rgba(92,26,46,0.2)" }}>

@@ -101,7 +101,7 @@ export default function ObjectifAimant({ phrase, progress = 0, onSetObjectif }: 
           style={{ background: "none", border: "none", cursor: "pointer", marginTop: "4px" }}
         >
           <p style={{ color: "var(--texte-discret)", fontSize: "12px", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif", textAlign: "center" }}>
-            Poser ton cap avec Téfi →
+            Poser ton cap avec Terri →
           </p>
         </button>
       )}

@@ -108,7 +108,7 @@ function SwipeableTaskRow({ task, isDone, onDone, onUpdate, onRework, borderBott
                   style={{ display: "block", width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: "13px", color: "var(--texte-secondary)", borderRadius: "6px" }}
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "var(--fond)"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}>
-                  Retravailler avec Téfi
+                  Retravailler avec Terri
                 </button>
                 <button onClick={() => { setShowDesktopMenu(false); setShowPanel(true); }}
                   style={{ display: "block", width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: "13px", color: "var(--texte-secondary)", borderRadius: "6px" }}
@@ -160,7 +160,7 @@ function ObjAimantRing({ phrase, progress, onClick }: { phrase?: string; progres
           <text x={size / 2} y={size / 2 + 5} textAnchor="middle" fontSize="20" fill="rgba(92,26,46,0.25)">◎</text>
         )}
       </svg>
-      {!phrase && <p style={{ color: "var(--texte-discret)", fontSize: "12px", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif" }}>Poser mon cap avec Téfi →</p>}
+      {!phrase && <p style={{ color: "var(--texte-discret)", fontSize: "12px", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif" }}>Poser mon cap avec Terri →</p>}
     </button>
   );
 }
@@ -173,7 +173,9 @@ export default function HomePage() {
   const [openThemes, setOpenThemes] = useState<Set<string>>(new Set());
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
   const [isExpired, setIsExpired] = useState(false);
-  const [tefiGreeting, setTefiGreeting] = useState<string>("");
+  const [surchargeScore, setSurchargeScore] = useState<"vert" | "orange" | "rouge">("vert");
+  const [alerteSent, setAlerteSent] = useState(false);
+  const [terriGreeting, setTerriGreeting] = useState<string>("");
   // Modal rework (swipe gauche / desktop "Retravailler")
   const [reworkTask, setReworkTask] = useState<string | null>(null);
   const [reworkInput, setReworkInput] = useState("");
@@ -188,7 +190,7 @@ export default function HomePage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { window.location.href = "/auth/login"; return; }
 
-    const { data: p } = await supabase.from("profiles").select("prenom,objectif_aimant,objectif_debut,objectif_horizon,trial_ends_at,dark_mode,font_size").eq("id", user.id).single();
+    const { data: p } = await supabase.from("profiles").select("prenom,objectif_aimant,objectif_debut,objectif_horizon,trial_ends_at,dark_mode,font_size,surcharge_score").eq("id", user.id).single();
     if (p) {
       setProfile(p as Profile);
       if (p.dark_mode) document.documentElement.setAttribute("data-theme", "dark");
@@ -197,8 +199,12 @@ export default function HomePage() {
         setDaysLeft(d);
         setIsExpired(d <= 0);
       }
+      // Surcharge score + calcul
+      if (p.surcharge_score) setSurchargeScore(p.surcharge_score as "vert" | "orange" | "rouge");
+      fetch("/api/surcharge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) })
+        .then(r => r.json()).then(d => { if (d.score) setSurchargeScore(d.score); }).catch(() => {});
 
-      // Bulle d'accueil Téfi — première ouverture de la journée
+      // Bulle d'accueil Terri — première ouverture de la journée
       const todayKey = `firmament_last_visit_${user.id}`;
       const lastVisit = localStorage.getItem(todayKey);
       const today = new Date().toISOString().split("T")[0];
@@ -208,8 +214,8 @@ export default function HomePage() {
         const { data: yesterdayTasks } = await supabase.from("tasks").select("title").eq("user_id", user.id).eq("status", "active").eq("is_priority", true).limit(1);
         const nom = capitalize(p.prenom || "");
         if (yesterdayTasks && yesterdayTasks.length > 0) {
-          setTefiGreeting(`Bonjour${nom ? " " + nom : ""}. Tu avais "${yesterdayTasks[0].title}" comme priorité hier. Ça s'est passé comment ?`);
-          greetingTimerRef.current = setTimeout(() => setTefiGreeting(""), 7000);
+          setTerriGreeting(`Bonjour${nom ? " " + nom : ""}. Tu avais "${yesterdayTasks[0].title}" comme priorité hier. Ça s'est passé comment ?`);
+          greetingTimerRef.current = setTimeout(() => setTerriGreeting(""), 7000);
         }
       }
     }
@@ -259,7 +265,7 @@ export default function HomePage() {
     if (!reworkInput.trim() || reworkLoading) return;
     setReworkLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    const res = await fetch("/api/tefi", {
+    const res = await fetch("/api/terri", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages: [
@@ -384,14 +390,27 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Bulle d'accueil Téfi */}
-      {tefiGreeting && (
+      {/* Bouton Alerte Stratège (score rouge uniquement) */}
+      {surchargeScore === "rouge" && !alerteSent && (
+        <div style={{ padding: "10px 20px", backgroundColor: "rgba(176,0,32,0.06)", borderBottom: "1px solid rgba(176,0,32,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+          <p style={{ fontSize: "12px", color: "#B00020", flex: 1 }}>⚠️ Tu sembles très chargé·e en ce moment.</p>
+          <button onClick={async () => {
+            await fetch("/api/alerte-stratege", { method: "POST" });
+            setAlerteSent(true);
+          }} style={{ backgroundColor: "#B00020", color: "white", borderRadius: "8px", padding: "6px 12px", border: "none", cursor: "pointer", fontSize: "12px", fontFamily: "DM Sans", fontWeight: 500, flexShrink: 0 }}>
+            Alerter le Stratège
+          </button>
+        </div>
+      )}
+
+      {/* Bulle d'accueil Terri */}
+      {terriGreeting && (
         <a href="/dump" style={{ display: "flex", gap: "10px", alignItems: "flex-start", padding: "12px 20px", backgroundColor: "var(--fond-or)", textDecoration: "none", cursor: "pointer", borderBottom: "1px solid rgba(26,18,16,0.06)" }}
-          onClick={() => { if (greetingTimerRef.current) clearTimeout(greetingTimerRef.current); setTefiGreeting(""); }}>
+          onClick={() => { if (greetingTimerRef.current) clearTimeout(greetingTimerRef.current); setTerriGreeting(""); }}>
           <div style={{ width: "26px", height: "26px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "14px", fontStyle: "italic" }}>t</span>
           </div>
-          <p style={{ fontSize: "14px", color: "var(--texte-secondary)", lineHeight: "1.5", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif" }}>{tefiGreeting}</p>
+          <p style={{ fontSize: "14px", color: "var(--texte-secondary)", lineHeight: "1.5", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif" }}>{terriGreeting}</p>
         </a>
       )}
 
@@ -416,7 +435,7 @@ export default function HomePage() {
           <p style={{ color: "var(--texte-discret)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "10px" }}>Aujourd'hui</p>
           {tasks.length === 0 ? (
             <p style={{ color: "var(--texte-discret)", fontSize: "14px", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif", padding: "12px 0" }}>
-              Fais un Dump — Téfi identifiera tes priorités.
+              Fais un Dump — Terri identifiera tes priorités.
             </p>
           ) : (
             <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", border: "1px solid rgba(26,18,16,0.07)", overflow: "hidden" }}>

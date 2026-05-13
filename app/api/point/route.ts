@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   </div>
 
   <div class="card">
-    <div class="label">Ce que Téfi retient de ta semaine</div>
+    <div class="label">Ce que Terri retient de ta semaine</div>
     <div class="summary">${summary || "Une semaine de progression. Continue."}</div>
   </div>
 
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 </html>`;
 
     const { error } = await resend.emails.send({
-      from: "Téfi · FIRMAMENT <tefi@frmmnt.fr>",
+      from: "Terri · FIRMAMENT <terri@frmmnt.fr>",
       to: user.email!,
       subject: `Ton Point FIRMAMENT — semaine du ${fmt(weekStart)}`,
       html,

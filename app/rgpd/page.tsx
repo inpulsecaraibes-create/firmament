@@ -7,8 +7,8 @@ export default function RGPD() {
 
       {[
         { title: "Qui collecte vos données ?", content: "Duleme & Cie — 27, chemin Malanga, 97215 Rivière Salée — admin@frmmnt.fr" },
-        { title: "Ce que nous collectons", content: "Prénom, adresse email professionnelle, nom ou secteur de l'entreprise, ancienneté en tant que dirigeant, état du moment. Contenus des conversations avec Téfi, smart to-dos, décisions prises, objectifs formulés." },
-        { title: "Pourquoi nous le collectons", content: "Pour faire fonctionner FIRMAMENT — vous identifier, sauvegarder vos données, personnaliser les réponses de Téfi et vous envoyer les communications que vous avez acceptées." },
+        { title: "Ce que nous collectons", content: "Prénom, adresse email professionnelle, nom ou secteur de l'entreprise, ancienneté en tant que dirigeant, état du moment. Contenus des conversations avec Terri, smart to-dos, décisions prises, objectifs formulés." },
+        { title: "Pourquoi nous le collectons", content: "Pour faire fonctionner FIRMAMENT — vous identifier, sauvegarder vos données, personnaliser les réponses de Terri et vous envoyer les communications que vous avez acceptées." },
         { title: "Où vos données sont stockées", content: "Base de données Supabase hébergée en Europe (West EU — Irlande). Vos conversations sont chiffrées en transit et au repos. Elles ne quittent pas FIRMAMENT." },
         { title: "Durée de conservation", content: "Durée de votre abonnement ou compte actif + 12 mois après fermeture. Vous pouvez demander la suppression à tout moment." },
         { title: "Pas de partage ni revente", content: "Nous ne vendons pas vos données. Nous ne les partageons avec aucun tiers sauf nécessité technique (hébergeurs listés dans les mentions légales)." },

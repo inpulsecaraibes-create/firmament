@@ -46,9 +46,9 @@ export default function LePoint({ onClose }: LePointProps) {
     setActionsDone(doneList);
     setActionsRemaining((remaining || []).map(a => ({ ...a, keep: true })));
 
-    // Générer le résumé Téfi
+    // Générer le résumé Terri
     try {
-      const res = await fetch("/api/tefi", {
+      const res = await fetch("/api/terri", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -145,13 +145,13 @@ Parle à la deuxième personne, en ami stratège, sans jugement.`,
           </div>
         ) : (
           <>
-            {/* Résumé Téfi */}
+            {/* Résumé Terri */}
             <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "10px", padding: "16px", marginBottom: "16px", borderLeft: "2px solid rgba(92,26,46,0.15)" }}>
               <p style={{ color: "var(--texte-discret)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "DM Sans", marginBottom: "8px" }}>
-                Résumé de Téfi
+                Résumé de Terri
               </p>
               {loadingAI ? (
-                <p style={{ color: "var(--texte-discret)", fontSize: "14px", fontStyle: "italic" }}>Téfi prépare ton résumé···</p>
+                <p style={{ color: "var(--texte-discret)", fontSize: "14px", fontStyle: "italic" }}>Terri prépare ton résumé···</p>
               ) : (
                 <p style={{ color: "var(--texte-secondary)", fontSize: "15px", fontStyle: "italic", fontFamily: "Cormorant Garamond, serif", lineHeight: "1.6" }}>
                   {summary}

@@ -20,6 +20,7 @@ export default function ParametresPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [aiMode, setAiMode] = useState<"terri" | "stefi">("terri");
   const [sesameCode, setSesameCode] = useState("");
   const [sesameResult, setSesameResult] = useState<string | null>(null);
   const [sesameLoading, setSesameLoading] = useState(false);
@@ -39,8 +40,8 @@ export default function ParametresPage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
       setEmail(user.email || "");
-      const { data: p } = await supabase.from("profiles").select("prenom,telephone,entreprise,localisation,referral_code").eq("id", user.id).single();
-      if (p) { setPrenom(p.prenom || ""); setTelephone(p.telephone || ""); setEntreprise(p.entreprise || ""); setLocalisation(p.localisation || ""); setReferralCode(p.referral_code || ""); }
+      const { data: p } = await supabase.from("profiles").select("prenom,telephone,entreprise,localisation,referral_code,ai_mode").eq("id", user.id).single();
+      if (p) { setPrenom(p.prenom || ""); setTelephone(p.telephone || ""); setEntreprise(p.entreprise || ""); setLocalisation(p.localisation || ""); setReferralCode(p.referral_code || ""); setAiMode((p.ai_mode as "terri" | "stefi") || "terri"); }
       const { count } = await supabase.from("referrals").select("*", { count: "exact", head: true }).eq("parrain_id", user.id).eq("validated", true);
       setReferralCount(count || 0);
     });
@@ -180,6 +181,52 @@ export default function ParametresPage() {
               <div>
                 <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--texte)", marginBottom: "3px" }}>{title}</p>
                 <p style={{ fontSize: "12px", color: "var(--texte-discret)", lineHeight: "1.5" }}>{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* MON COMPAGNON */}
+        <p style={{ fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--texte-discret)", marginBottom: "10px" }}>Mon compagnon</p>
+        <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", padding: "16px", marginBottom: "20px", border: "1px solid rgba(26,18,16,0.08)" }}>
+          <p style={{ fontSize: "13px", color: "var(--texte-discret)", marginBottom: "14px" }}>Pendant les 30 jours d'essai, tu as accès aux deux compagnons.</p>
+          {[
+            { id: "terri", name: "Terri — L'accélérateur", desc: "Pour briser la procrastination et passer à l'action.", price: "50€/mois" },
+            { id: "stefi", name: "Stefi — La souveraine", desc: "Pour protéger ta vision et détecter ce qui te freine.", price: "150€/mois" },
+          ].map(({ id, name, desc, price }) => (
+            <div key={id} style={{ display: "flex", gap: "12px", padding: "12px", marginBottom: "8px", borderRadius: "10px", border: `1.5px solid ${aiMode === id ? "var(--bordeaux)" : "rgba(26,18,16,0.1)"}`, backgroundColor: aiMode === id ? "rgba(92,26,46,0.04)" : "transparent", cursor: "pointer" }}
+              onClick={async () => {
+                setAiMode(id as "terri" | "stefi");
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) await supabase.from("profiles").update({ ai_mode: id }).eq("id", user.id);
+              }}>
+              <div style={{ width: "18px", height: "18px", borderRadius: "50%", border: `2px solid ${aiMode === id ? "var(--bordeaux)" : "rgba(26,18,16,0.2)"}`, backgroundColor: aiMode === id ? "var(--bordeaux)" : "transparent", flexShrink: 0, marginTop: "2px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {aiMode === id && <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "white" }} />}
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: "14px", fontWeight: 500, color: aiMode === id ? "var(--bordeaux)" : "var(--texte)", marginBottom: "2px" }}>{name}</p>
+                <p style={{ fontSize: "12px", color: "var(--texte-discret)", lineHeight: "1.4" }}>{desc}</p>
+              </div>
+              <p style={{ fontSize: "12px", color: "var(--texte-discret)", flexShrink: 0, alignSelf: "center" }}>{price}</p>
+            </div>
+          ))}
+          <p style={{ fontSize: "11px", color: "var(--texte-discret)", marginTop: "8px", fontStyle: "italic" }}>L'abonnement sera disponible après les 30 jours d'essai.</p>
+        </div>
+
+        {/* SÉCURITÉ & CONFIDENTIALITÉ */}
+        <p style={{ fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--texte-discret)", marginBottom: "10px" }}>Sécurité & confidentialité</p>
+        <div style={{ backgroundColor: "var(--fond-blanc)", borderRadius: "12px", padding: "16px", marginBottom: "20px", border: "1px solid rgba(26,18,16,0.08)" }}>
+          {[
+            { icon: "🔒", title: "Données cloisonnées", desc: "Chaque espace est isolé. Aucun utilisateur ne peut voir les données d'un autre." },
+            { icon: "🛡️", title: "Chiffrement bout en bout", desc: "Tes conversations voyagent et sont stockées chiffrées. Elles ne quittent jamais FIRMAMENT." },
+            { icon: "👁️", title: "Zéro lecture humaine", desc: "Aucun membre de l'équipe Duleme & Cie ne lit tes Dumps. Jamais. Seuls les indicateurs agrégés sont visibles." },
+            { icon: "🌍", title: "Données en Europe", desc: "Stockées sur Supabase — serveurs West EU (Irlande). Conformes RGPD." },
+          ].map(({ icon, title, desc }) => (
+            <div key={title} style={{ display: "flex", gap: "12px", padding: "10px 0", borderBottom: "1px solid rgba(26,18,16,0.06)" }}>
+              <span style={{ fontSize: "18px", flexShrink: 0 }}>{icon}</span>
+              <div>
+                <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--texte)", marginBottom: "2px" }}>{title}</p>
+                <p style={{ fontSize: "12px", color: "var(--texte-discret)", lineHeight: "1.4" }}>{desc}</p>
               </div>
             </div>
           ))}

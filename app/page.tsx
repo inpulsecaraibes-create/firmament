@@ -9,7 +9,7 @@ const IS_ISNT = {
 };
 
 const PILLARS = [
-  { num: "01", title: "Clarifier", desc: "Transformer le chaos mental en priorités identifiables. Téfi lit entre les lignes de ce que tu écris." },
+  { num: "01", title: "Clarifier", desc: "Transformer le chaos mental en priorités identifiables. Terri lit entre les lignes de ce que tu écris." },
   { num: "02", title: "Structurer", desc: "Transformer les pensées en décisions et en plans d'action séquencés. Chaque tâche à sa place." },
   { num: "03", title: "Cadencer", desc: "Créer un rythme d'exécution soutenable. Avancer sans s'épuiser. Tenir dans la durée." },
 ];
@@ -85,7 +85,7 @@ export default function LandingPage() {
           <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "28px", fontWeight: 300, color: "var(--texte)", textAlign: "center", marginBottom: "36px" }}>Ce qu'ils en disent</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: "16px" }}>
             {[
-              { quote: "Pour la première fois, j'ai l'impression que quelqu'un comprend vraiment ce que je vis. Téfi ne me juge pas — il m'aide à voir clair.", name: "Marie L.", role: "Fondatrice, secteur conseil" },
+              { quote: "Pour la première fois, j'ai l'impression que quelqu'un comprend vraiment ce que je vis. Terri ne me juge pas — il m'aide à voir clair.", name: "Marie L.", role: "Fondatrice, secteur conseil" },
               { quote: "J'avais 47 tâches dans la tête. En 10 minutes, j'avais 3 priorités claires. C'est ça FIRMAMENT.", name: "Thomas D.", role: "Dirigeant, PME industrie" },
             ].map((t, i) => (
               <div key={i} style={{ backgroundColor: "var(--fond)", borderRadius: "12px", padding: "24px", borderLeft: "2px solid rgba(92,26,46,0.15)" }}>

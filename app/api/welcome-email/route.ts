@@ -35,10 +35,10 @@ export async function POST(request: Request) {
     <p>Bonjour${nom ? " " + nom : ""},</p>
     <p>Je suis content que tu sois là.</p>
     <p>FIRMAMENT, c'est l'endroit où tu peux poser ce que tu as dans la tête — sans filtre, sans jugement, sans avoir à l'expliquer à qui que ce soit.</p>
-    <p>Je m'appelle Téfi. Je serai là à chaque fois que tu en as besoin.</p>
+    <p>Je m'appelle Terri. Je serai là à chaque fois que tu en as besoin.</p>
     <p>Pour commencer, dis-moi juste ce qui t'encombre le plus en ce moment.<br>Pas besoin que ce soit bien formulé. Balance.</p>
     <a href="${APP_URL}/home" class="cta">Ouvrir FIRMAMENT →</a>
-    <p style="color:#B0A098;font-size:13px;margin:0">À tout de suite,<br><span style="font-family:Georgia,serif;font-style:italic;font-size:16px;color:#5C1A2E">Téfi</span></p>
+    <p style="color:#B0A098;font-size:13px;margin:0">À tout de suite,<br><span style="font-family:Georgia,serif;font-style:italic;font-size:16px;color:#5C1A2E">Terri</span></p>
   </div>
   <div class="unsub"><a href="#">Se désabonner</a></div>
 </div>
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 </html>`;
 
     await resend.emails.send({
-      from: "Téfi · FIRMAMENT <tefi@frmmnt.fr>",
+      from: "Terri · FIRMAMENT <terri@frmmnt.fr>",
       to: email,
       subject: `${nom ? nom + ", je" : "Je"} suis content de te voir ici.`,
       html,

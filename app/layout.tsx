@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "FIRMAMENT — Compagnon stratégique des dirigeants | Duleme & Cie",
-  description: "Tu me dis ce que tu as dans la tête. FIRMAMENT t'aide à savoir quoi faire. Clarifier, structurer, cadencer — avec Téfi, ton compagnon stratégique.",
+  description: "Tu me dis ce que tu as dans la tête. FIRMAMENT t'aide à savoir quoi faire. Clarifier, structurer, cadencer — avec Terri, ton compagnon stratégique.",
   keywords: "stratégie dirigeant, clarté mentale, productivité, prise de décision, Martinique, Duleme",
   openGraph: {
     title: "FIRMAMENT — Ton compagnon stratégique",

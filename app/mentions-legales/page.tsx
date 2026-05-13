@@ -25,7 +25,7 @@ export default function MentionsLegales() {
 
       <h2 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", marginTop: "24px" }}>Propriété intellectuelle</h2>
       <p style={{ fontSize: "14px", lineHeight: "1.7", color: "#3D2E28" }}>
-        L'ensemble du contenu de FIRMAMENT (textes, design, logo, système prompt Téfi) est la propriété exclusive de Duleme & Cie. Toute reproduction est interdite sans autorisation préalable.
+        L'ensemble du contenu de FIRMAMENT (textes, design, logo, système prompt Terri) est la propriété exclusive de Duleme & Cie. Toute reproduction est interdite sans autorisation préalable.
       </p>
 
       <p style={{ fontSize: "12px", color: "#B0A098", marginTop: "48px" }}>Powered by Duleme & Cie · frmmnt.fr</p>

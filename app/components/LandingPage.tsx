@@ -13,7 +13,7 @@ const PILLARS = [
   {
     num: "01",
     title: "Clarifier",
-    desc: "Transformer le chaos mental en priorités identifiables. Téfi lit entre les lignes de ce que tu écris."
+    desc: "Transformer le chaos mental en priorités identifiables. Terri lit entre les lignes de ce que tu écris."
   },
   {
     num: "02",
@@ -193,7 +193,7 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
             {[
-              { quote: "Pour la première fois, j'ai l'impression que quelqu'un comprend vraiment ce que je vis en tant que dirigeant. Téfi ne me juge pas — il m'aide à voir clair.", name: "Marie L.", role: "Fondatrice, secteur conseil" },
+              { quote: "Pour la première fois, j'ai l'impression que quelqu'un comprend vraiment ce que je vis en tant que dirigeant. Terri ne me juge pas — il m'aide à voir clair.", name: "Marie L.", role: "Fondatrice, secteur conseil" },
               { quote: "J'avais 47 tâches dans la tête. En 10 minutes, j'avais 3 priorités claires. C'est ça FIRMAMENT.", name: "Thomas D.", role: "Dirigeant, PME industrie" },
             ].map((t, i) => (
               <div key={i} style={{

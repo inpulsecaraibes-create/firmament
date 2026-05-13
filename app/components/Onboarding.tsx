@@ -36,7 +36,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [entreprise, setEntreprise] = useState("");
   const [anciennete, setAnciennete] = useState("");
   const [etatMoment, setEtatMoment] = useState("");
-  const [tefiMessage, setTefiMessage] = useState("");
+  const [terriMessage, setTefiMessage] = useState("");
   const [objectifQuestion, setObjectifQuestion] = useState("");
   const [objectifPhrase, setObjectifPhrase] = useState("");
   const [objectifEdit, setObjectifEdit] = useState("");
@@ -94,7 +94,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/tefi", {
+      const res = await fetch("/api/terri", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -163,7 +163,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     fontWeight: selected ? 500 : 400,
   });
 
-  const tefiAvatar = (
+  const terriAvatar = (
     <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
       <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "18px", fontStyle: "italic" }}>t</span>
     </div>
@@ -172,7 +172,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   function TefiSays({ children }: { children: React.ReactNode }) {
     return (
       <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "28px" }}>
-        {tefiAvatar}
+        {terriAvatar}
         <div style={{
           backgroundColor: "var(--fond-blanc)",
           borderLeft: "2px solid rgba(92,26,46,0.15)",
@@ -254,14 +254,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 </button>
               ))}
             </div>
-            {loading && <p style={{ textAlign: "center", color: "var(--texte-discret)", fontSize: "13px", marginTop: "16px" }}>Téfi prend note···</p>}
+            {loading && <p style={{ textAlign: "center", color: "var(--texte-discret)", fontSize: "13px", marginTop: "16px" }}>Terri prend note···</p>}
           </>
         )}
 
-        {/* Réponse de Téfi */}
+        {/* Réponse de Terri */}
         {step === "tefi_response" && (
           <>
-            <TefiSays>{tefiMessage}</TefiSays>
+            <TefiSays>{terriMessage}</TefiSays>
             <button onClick={() => setStep("objectif_invite")}
               style={{ width: "100%", backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "15px", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, border: "none", cursor: "pointer" }}>
               On continue →
@@ -307,7 +307,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             />
             <button onClick={handleObjectifGenerate} disabled={!objectifQuestion.trim() || loading}
               style={{ width: "100%", backgroundColor: objectifQuestion.trim() && !loading ? "var(--bordeaux)" : "var(--texte-discret)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "15px", fontSize: "15px", fontFamily: "DM Sans, sans-serif", fontWeight: 500, border: "none", cursor: objectifQuestion.trim() && !loading ? "pointer" : "not-allowed" }}>
-              {loading ? "Téfi formule ton cap···" : "Formuler mon cap →"}
+              {loading ? "Terri formule ton cap···" : "Formuler mon cap →"}
             </button>
           </>
         )}
@@ -316,7 +316,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         {step === "objectif_confirm" && (
           <>
             <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "20px" }}>
-              {tefiAvatar}
+              {terriAvatar}
               <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "14px", color: "var(--texte-secondary)", lineHeight: "1.6", fontStyle: "italic" }}>
                 {`D'après ce que tu m'as dit, ton cap pour les 30 prochains jours serait :`}
               </p>

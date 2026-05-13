@@ -83,7 +83,7 @@ export default function DumpPage() {
       // Vérifier si c'est le 1er accès (0 tâches) → cycle d'extraction complet
       const { count: taskCount } = await supabase.from("tasks").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "active");
       if ((taskCount || 0) === 0) {
-        // Premier accès → Téfi démarre le cycle de 5 questions
+        // Premier accès → Terri démarre le cycle de 5 questions
         const firstMsg: Msg = { role: "assistant", content: "Avant qu'on organise ton espace, j'ai besoin de savoir où tu en es.\n\nDis-moi tout ce que tu as à faire en ce moment — maintenant, demain, dans 6 mois. Balance tout, dans l'ordre que tu veux." };
         setMessages([firstMsg]);
         setScreen("chat");
@@ -148,7 +148,7 @@ export default function DumpPage() {
     }
 
     try {
-      const res = await fetch("/api/tefi", {
+      const res = await fetch("/api/terri", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ brainDump: dump, userId }),
@@ -158,7 +158,7 @@ export default function DumpPage() {
       if (d.observation) {
         // Inclure la formulation AIMANT+ si disponible
         const aimantBlock = d.aimant ? `\n\n${d.aimant}` : "";
-        const tefiContent = `${d.observation}\n\n${aimantBlock}\n\n${d.actions.map((a: string, i: number) => `${i + 1}. ${a}`).join("\n")}\n\n${d.question}`.trim();
+        const terriContent = `${d.observation}\n\n${aimantBlock}\n\n${d.actions.map((a: string, i: number) => `${i + 1}. ${a}`).join("\n")}\n\n${d.question}`.trim();
 
         // Créer les tâches depuis les actions
         const taskItems: TaskItem[] = d.actions.map((a: string) => ({ title: a }));
@@ -168,12 +168,12 @@ export default function DumpPage() {
 
         const msgs: Msg[] = [
           { role: "user", content: dump },
-          { role: "assistant", content: tefiContent, tasks: taskItems },
+          { role: "assistant", content: terriContent, tasks: taskItems },
         ];
         setMessages(msgs);
 
         if (userId) {
-          await supabase.from("conversations").insert({ user_id: userId, role: "assistant", content: tefiContent, session_date: new Date().toISOString().split("T")[0] });
+          await supabase.from("conversations").insert({ user_id: userId, role: "assistant", content: terriContent, session_date: new Date().toISOString().split("T")[0] });
         }
         setScreen("chat");
       } else {
@@ -204,7 +204,7 @@ export default function DumpPage() {
     if (userId) await supabase.from("conversations").insert({ user_id: userId, role: "user", content: sent, session_date: new Date().toISOString().split("T")[0] });
 
     try {
-      const res = await fetch("/api/tefi", {
+      const res = await fetch("/api/terri", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: newMsgs.slice(-20).map(m => ({ role: m.role, content: m.content })), userId }),
@@ -422,7 +422,7 @@ export default function DumpPage() {
           <div style={{ width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "16px", fontStyle: "italic" }}>t</span>
           </div>
-          <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--texte)" }}>Téfi</span>
+          <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--texte)" }}>Terri</span>
         </div>
         <a href="/parametres" style={{ color: "var(--texte-discret)", textDecoration: "none", fontSize: "16px" }}>⚙</a>
       </div>
@@ -449,7 +449,7 @@ export default function DumpPage() {
                 const newMsgs = [...messages, { role: "user" as const, content: rebondMsg }];
                 setMessages(newMsgs);
                 setChatLoading(true);
-                fetch("/api/tefi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: newMsgs.slice(-20).map(m => ({ role: m.role, content: m.content })), userId }) })
+                fetch("/api/terri", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: newMsgs.slice(-20).map(m => ({ role: m.role, content: m.content })), userId }) })
                   .then(r => r.json())
                   .then(d => { setChatLoading(false); setMessages([...newMsgs, { role: "assistant", content: d.text || "..." }]); })
                   .catch(() => { setChatLoading(false); setMessages([...newMsgs, { role: "assistant", content: "J'ai du mal à te répondre là. Tu veux réessayer ?" }]); });
@@ -465,7 +465,7 @@ export default function DumpPage() {
               </div>
             )}
 
-            {/* CTA complet à partir du 3ème échange Téfi */}
+            {/* CTA complet à partir du 3ème échange Terri */}
             {msg.role === "assistant" && !userId && i >= 3 && i === messages.length - 1 && (
               <div style={{ marginLeft: "36px", backgroundColor: "var(--fond-blanc)", border: "1px solid rgba(92,26,46,0.12)", borderRadius: "12px", padding: "16px" }}>
                 <a href="/auth/register" style={{ display: "block", backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "10px", padding: "13px", fontSize: "14px", fontFamily: "DM Sans", fontWeight: 500, textDecoration: "none", textAlign: "center", marginBottom: "8px" }}>
@@ -642,7 +642,7 @@ function TaskBubble({ tasks, isLoggedIn, onRebond }: {
             }}>
             {done.has(j) && <span style={{ color: "white", fontSize: "11px", lineHeight: 1 }}>✓</span>}
           </button>
-          {/* Titre — clic = Téfi rebondit */}
+          {/* Titre — clic = Terri rebondit */}
           <div style={{ flex: 1 }}>
             <button onClick={() => !done.has(j) && onRebond(t.title)}
               style={{ background: "none", border: "none", cursor: done.has(j) ? "default" : "pointer", textAlign: "left", padding: 0, width: "100%" }}>

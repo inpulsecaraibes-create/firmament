@@ -28,7 +28,7 @@ export default function OnboardingPage() {
   const [anciennete, setAnciennete] = useState("");
   const [etat, setEtat] = useState("");
   const [saving, setSaving] = useState(false);
-  const [tefiFeedback, setTefiFeedback] = useState("");
+  const [terriFeedback, setTefiFeedback] = useState("");
   const supabase = createClient();
 
   async function save(step: string, extra?: object) {
@@ -41,9 +41,9 @@ export default function OnboardingPage() {
     if (!entreprise.trim()) return;
     await save("q1", { entreprise: entreprise.trim() });
 
-    // Feedback stratégique de Téfi sur l'entreprise
+    // Feedback stratégique de Terri sur l'entreprise
     try {
-      const res = await fetch("/api/tefi", {
+      const res = await fetch("/api/terri", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -85,7 +85,7 @@ export default function OnboardingPage() {
     window.location.href = "/home";
   }
 
-  const tefiMsg = () => {
+  const terriMsg = () => {
     const ak = ANCIENNETE_MAP[anciennete] || "plus_3";
     const ek = ETAT_MAP[etat] || "flou";
     return TEFI_RESPONSES[ak]?.[ek] || "Tu es au bon endroit. On va y voir plus clair ensemble.";
@@ -107,7 +107,7 @@ export default function OnboardingPage() {
     </button>
   );
 
-  const tefiSays = (text: string) => (
+  const terriSays = (text: string) => (
     <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "28px" }}>
       <div style={{ width: "34px", height: "34px", borderRadius: "50%", backgroundColor: "var(--bordeaux)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <span style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--fond-blanc)", fontSize: "18px", fontStyle: "italic" }}>t</span>
@@ -125,7 +125,7 @@ export default function OnboardingPage() {
 
         {step === 0 && (
           <>
-            {tefiSays("Avant qu'on commence… dis-moi en quelques mots ce que tu fais. Ton entreprise, ton activité — comme tu l'expliquerais à quelqu'un que tu viens de rencontrer.")}
+            {terriSays("Avant qu'on commence… dis-moi en quelques mots ce que tu fais. Ton entreprise, ton activité — comme tu l'expliquerais à quelqu'un que tu viens de rencontrer.")}
             <textarea value={entreprise} onChange={e => setEntreprise(e.target.value)} placeholder="Je fais…" rows={4} autoFocus
               style={{ width: "100%", backgroundColor: "var(--fond-blanc)", color: "var(--texte)", borderBottom: "2px solid var(--texte-discret)", borderTop: "none", borderLeft: "none", borderRight: "none", resize: "none", fontSize: "15px", lineHeight: "1.7", padding: "12px 4px", fontFamily: "DM Sans", marginBottom: "20px" }}
               onFocus={e => { e.target.style.borderBottomColor = "var(--bordeaux)"; }} onBlur={e => { e.target.style.borderBottomColor = "var(--texte-discret)"; }} />
@@ -139,8 +139,8 @@ export default function OnboardingPage() {
 
         {step === 1 && (
           <>
-            {tefiFeedback && tefiSays(tefiFeedback)}
-            {tefiSays("Et tu es dans ce rôle de dirigeant depuis…")}
+            {terriFeedback && terriSays(terriFeedback)}
+            {terriSays("Et tu es dans ce rôle de dirigeant depuis…")}
             {["Moins de 3 ans", "Plus de 3 ans"].map(opt => btn(opt, () => handleQ2(opt)))}
             <button onClick={skip} style={{ width: "100%", background: "none", border: "none", color: "var(--texte-discret)", fontSize: "12px", cursor: "pointer", fontFamily: "DM Sans", marginTop: "4px" }}>Passer</button>
           </>
@@ -148,7 +148,7 @@ export default function OnboardingPage() {
 
         {step === 2 && (
           <>
-            {tefiSays("Sois honnête avec moi — en ce moment, tu te sens plutôt…")}
+            {terriSays("Sois honnête avec moi — en ce moment, tu te sens plutôt…")}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
               {[{ l: "🌫️ Dans le flou" }, { l: "🔥 Surchargé" }, { l: "🔄 En transition" }, { l: "🚀 En croissance" }].map(({ l }) => (
                 <button key={l} onClick={() => handleQ3(l.split(" ").slice(1).join(" "))}
@@ -164,7 +164,7 @@ export default function OnboardingPage() {
 
         {step === 3 && (
           <>
-            {tefiSays(tefiMsg())}
+            {terriSays(terriMsg())}
             <button onClick={goToObjectif} disabled={saving}
               style={{ width: "100%", backgroundColor: "var(--bordeaux)", color: "var(--fond-blanc)", borderRadius: "12px", padding: "15px", fontSize: "15px", fontFamily: "DM Sans", fontWeight: 500, border: "none", cursor: "pointer", marginBottom: "10px" }}>
               {saving ? "···" : "On pose mon objectif →"}

@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     <h1 style="color:#5C1A2E;font-size:28px;font-weight:300;letter-spacing:0.1em;margin:0">FIRMAMENT</h1>
   </div>
   <div style="background:#FDFBF8;border-radius:12px;padding:24px;margin-bottom:16px;border:1px solid rgba(26,18,16,0.08)">
-    <p style="color:#B0A098;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;margin:0 0 12px">Ce que Téfi a retenu</p>
+    <p style="color:#B0A098;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;margin:0 0 12px">Ce que Terri a retenu</p>
     <p style="color:#5C1A2E;font-size:17px;font-weight:500;line-height:1.4;margin:0;font-style:italic">${priority}</p>
   </div>
   <div style="background:#FDFBF8;border-radius:12px;padding:20px 24px;margin-bottom:24px;border:1px solid rgba(26,18,16,0.08)">
@@ -63,9 +63,9 @@ export async function POST(request: Request) {
 </html>`;
 
     await resend.emails.send({
-      from: "Téfi · FIRMAMENT <tefi@frmmnt.fr>",
+      from: "Terri · FIRMAMENT <terri@frmmnt.fr>",
       to: email,
-      subject: "Téfi a structuré ta tête — voilà ce qui compte",
+      subject: "Terri a structuré ta tête — voilà ce qui compte",
       html,
     });
 

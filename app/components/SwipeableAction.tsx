@@ -56,7 +56,7 @@ export default function SwipeableAction({
   function onTouchEnd() {
     if (!isDragging.current) { touchStart.current = null; return; }
     if (swipeX < -SWIPE_THRESHOLD) {
-      // Swipe gauche → Téfi reformule
+      // Swipe gauche → Terri reformule
       if (onTefiRebound) onTefiRebound(action.titre);
       setRebounding(true);
       setTimeout(() => setRebounding(false), 800);
